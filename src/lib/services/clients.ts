@@ -110,18 +110,22 @@ export const clientService = {
       // Create a clean copy of the data
       const cleanedData = { ...clientData };
       
-      // Make sure sales_rep_id is a number if present
-      if (cleanedData.salesRep && !cleanedData.sales_rep_id) {
-        cleanedData.sales_rep_id = parseInt(cleanedData.salesRep);
-      }
-      
-      // Remove salesRep field as it's not in the database
+      // Remove salesRep and sales_rep_id fields - no longer needed
       delete cleanedData.salesRep;
+      delete cleanedData.sales_rep_id;
       
       // Ensure we're not sending an empty ID
       if (!cleanedData.id || cleanedData.id === '') {
         delete cleanedData.id;
       }
+      
+      // Convert any null values to empty strings to prevent issues
+      Object.keys(cleanedData).forEach(key => {
+        if (cleanedData[key as keyof typeof cleanedData] === null) {
+          // @ts-ignore - This is safe because we've verified the key exists
+          cleanedData[key] = '';
+        }
+      });
       
       const response = await apiClient.post<ApiResponse<{id: string}>>('/clients', cleanedData);
       console.log('Create client response:', JSON.stringify(response.data, null, 2));
@@ -139,16 +143,20 @@ export const clientService = {
       // Create a clean copy of the data
       const cleanedData = { ...clientData };
       
-      // Make sure sales_rep_id is a number if present
-      if (cleanedData.salesRep && !cleanedData.sales_rep_id) {
-        cleanedData.sales_rep_id = parseInt(cleanedData.salesRep);
-      }
-      
-      // Remove salesRep field as it's not in the database
+      // Remove salesRep and sales_rep_id fields - no longer needed
       delete cleanedData.salesRep;
+      delete cleanedData.sales_rep_id;
       
       // Remove the id field from the update data (we're using it in the URL)
       delete cleanedData.id;
+      
+      // Convert any null values to empty strings to prevent issues
+      Object.keys(cleanedData).forEach(key => {
+        if (cleanedData[key as keyof typeof cleanedData] === null) {
+          // @ts-ignore - This is safe because we've verified the key exists
+          cleanedData[key] = '';
+        }
+      });
       
       await apiClient.put(`/clients/${id}`, cleanedData);
     } catch (error) {

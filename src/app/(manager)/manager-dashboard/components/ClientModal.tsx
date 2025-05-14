@@ -79,7 +79,11 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
 
   useEffect(() => {
     if (client) {
-      setFormData(client);
+      // Convert any null values to empty strings to avoid React controlled component errors
+      const safeClient = Object.fromEntries(
+        Object.entries(client).map(([key, value]) => [key, value === null ? '' : value])
+      );
+      setFormData(safeClient);
     } else {
       setFormData({
         id: '',
@@ -182,12 +186,8 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     
     if (validateForm()) {
       try {
-        // Create a copy of formData with correct mapping
-        const clientData = {
-          ...formData,
-          // Assign a default sales_rep_id of 1 for all clients
-          sales_rep_id: 1
-        };
+        // Create a copy of formData without any modifications
+        const clientData = { ...formData };
         
         // Make sure to remove the id field for new clients
         if (!client && clientData.id === '') {
@@ -219,7 +219,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         }
         
         // Close the modal
-      onClose();
+        onClose();
       } catch (error: any) {
         console.error('Error saving client:', error);
         const errorMessage = error.response?.data?.message || 
