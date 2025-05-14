@@ -124,7 +124,23 @@ class AuthService {
         }
       }
 
-      const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, credentials);
+      // Set proper headers to deal with potential CORS issues
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+
+      // Use axios with specific timeout for better error handling
+      const response = await axios.post<AuthResponse>(
+        `${API_BASE}/auth/login`, 
+        credentials,
+        { 
+          headers,
+          timeout: 10000,  // 10 second timeout
+          withCredentials: false // Change to true if you're using cookies cross-domain
+        }
+      );
+      
       const { token, user } = response.data;
       
       this.setAuthToken(token, rememberMe);
@@ -135,9 +151,11 @@ class AuthService {
       
       return response.data;
     } catch (error: any) {
+      // Clear any existing tokens to be safe
+      this.clearAuthToken();
+      
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
+        // Server responded with error status code
         const status = error.response.status;
         const message = error.response.data?.message || 'Unknown error';
         
@@ -149,10 +167,12 @@ class AuthService {
           throw new Error(`Login failed (${status}): ${message}`);
         }
       } else if (error.request) {
-        // The request was made but no response was received
+        // Network error - no response received
+        console.error('Network error during login:', error.message);
         throw new Error('No response from server. Please check your connection and try again.');
       } else {
-        // Something happened in setting up the request that triggered an Error
+        // Request setup error
+        console.error('Login error:', error.message);
         throw new Error('Login failed. Please try again later.');
       }
     }
