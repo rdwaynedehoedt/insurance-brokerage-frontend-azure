@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
   // Check if user is authenticated
   if (!token) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', request.nextUrl.pathname);
+    // Removed the 'from' parameter to avoid showing the login message
     return NextResponse.redirect(loginUrl);
   }
 
@@ -65,7 +65,7 @@ export function middleware(request: NextRequest) {
     if (decoded.exp < currentTime) {
       // Token expired, redirect to login
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('from', request.nextUrl.pathname);
+      // No 'from' parameter to avoid showing the login message
       return NextResponse.redirect(loginUrl);
     }
     
@@ -91,7 +91,7 @@ export function middleware(request: NextRequest) {
   } catch (error) {
     // Invalid token, redirect to login
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', request.nextUrl.pathname);
+    // No 'from' parameter to avoid showing the login message
     return NextResponse.redirect(loginUrl);
   }
 

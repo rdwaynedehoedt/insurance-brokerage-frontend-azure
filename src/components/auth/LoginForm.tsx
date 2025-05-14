@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AlertCircle, Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -13,7 +12,6 @@ export default function LoginForm() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false,
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +22,6 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Check if there's a "from" parameter, indicating a redirect
-    const from = searchParams.get('from');
-    if (from) {
-      setError(`Please log in to access ${from}`);
-    }
-
     // Security check for credentials in URL
     const hasEmailInUrl = searchParams.has('email');
     const hasPasswordInUrl = searchParams.has('password');
@@ -90,7 +82,7 @@ export default function LoginForm() {
       await login({
         email: formData.email,
         password: formData.password,
-      }, formData.rememberMe);
+      }, true); // Always remember user
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('401') || error.message.includes('credentials')) {
@@ -109,10 +101,10 @@ export default function LoginForm() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }));
     // Clear errors when user starts typing
     if (error) setError(null);
@@ -218,50 +210,20 @@ export default function LoginForm() {
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center">
-          <input
-            id="remember-me"
-            name="rememberMe"
-            type="checkbox"
-            checked={formData.rememberMe}
-            onChange={handleChange}
-            className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-            disabled={isLoading}
-          />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
-            Remember me
-          </label>
-        </div>
-
-        <div className="text-sm">
-          <Link
-            href="/forgot-password"
-            className="font-medium text-orange-700 hover:text-orange-600"
-          >
-            Forgot?
-          </Link>
-        </div>
-      </div>
-
       <div className="mt-6">
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg
-           shadow-sm text-sm font-medium text-white bg-orange-700 hover:bg-orange-800 
-           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 
-           disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
         >
           {isLoading ? (
             <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Signing in...
+              <span className="sr-only">Loading...</span>
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             </>
-          ) : 'Sign in'}
+          ) : (
+            'Sign in'
+          )}
         </button>
       </div>
     </form>
