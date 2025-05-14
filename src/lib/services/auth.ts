@@ -4,7 +4,9 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Use the new Choreo API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || '';
 const TOKEN_COOKIE_NAME = 'token';
 const USER_STORAGE_KEY = 'user_data';
 const TOKEN_EXPIRY_DAYS = 7;
@@ -39,6 +41,10 @@ class AuthService {
 
   constructor() {
     this.setupAxiosInterceptors();
+    // Set the API token for Choreo deployment
+    if (API_TOKEN && typeof window !== 'undefined') {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
+    }
   }
 
   private setupAxiosInterceptors() {
@@ -118,7 +124,7 @@ class AuthService {
         }
       }
 
-      const response = await axios.post<AuthResponse>(`${API_URL}/auth/login`, credentials);
+      const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, credentials);
       const { token, user } = response.data;
       
       this.setAuthToken(token, rememberMe);
@@ -158,9 +164,12 @@ class AuthService {
       const token = this.getToken();
       if (token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } else if (API_TOKEN) {
+        // If no user token, use the API token for Choreo
+        axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
       }
       
-      const response = await axios.get<User>(`${API_URL}/auth/me`);
+      const response = await axios.get<User>(`${API_BASE}/auth/me`);
       const user = response.data;
       
       if (typeof window !== 'undefined') {
@@ -181,11 +190,15 @@ class AuthService {
     // Perform a server-side logout if your API supports it
     try {
       if (this.isAuthenticated()) {
-        axios.post(`${API_URL}/auth/logout`, {})
+        axios.post(`${API_BASE}/auth/logout`, {})
           .catch(() => {}); // Silently catch errors on logout
       }
     } finally {
       this.clearAuthToken();
+      // Set the API token for Choreo if available
+      if (API_TOKEN) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
+      }
     }
   }
 

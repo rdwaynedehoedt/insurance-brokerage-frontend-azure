@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { authService } from './auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Use the new Choreo API configuration
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || '';
 
 export interface Client {
   id?: string;
@@ -61,7 +63,7 @@ interface ApiResponse<T> {
 }
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -70,10 +72,16 @@ const apiClient = axios.create({
 // Add token to requests
 apiClient.interceptors.request.use(
   (config) => {
+    // First try to use user token
     const token = authService.getToken();
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+    } 
+    // If no user token, use API token if available (for Choreo)
+    else if (API_TOKEN) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${API_TOKEN}`;
     }
     return config;
   },
