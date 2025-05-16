@@ -1,0 +1,19 @@
+version: 1.0
+type: container
+serviceName: insurance-frontend
+port: 3000
+
+build:
+  dockerfile: Dockerfile
+
+environment:
+  variables:
+    NODE_ENV: production
+
+resources:
+  cpu: 0.5
+  memory: 512Mi
+
+scaling:
+  minReplicas: 1
+  maxReplicas: 3 
