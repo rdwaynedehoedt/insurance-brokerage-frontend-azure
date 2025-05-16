@@ -147,12 +147,10 @@ export default function AdminDashboard() {
   
   const handleDeleteUser = (user: User) => {
     // In a real app, implement confirmation dialog and API call
-    console.log('Deleting user:', user);
   };
   
   const handleSubmitUser = async (formData: UserFormData) => {
     // In a real app, this would make an API call
-    console.log('Form submitted:', formData);
     // Mock successful submission by resolving after a delay
     return new Promise<void>((resolve) => {
       setTimeout(() => {

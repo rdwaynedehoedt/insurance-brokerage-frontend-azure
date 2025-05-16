@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<{ success: boolean; user: User } | void>;
+  login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   userRole: string | null;
 }
@@ -80,14 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       setIsAuthenticated(true);
       
-      // Redirect based on role - only if login was successful
+      // Redirect based on role
       redirectToDashboard(user.role);
-      return { success: true, user };
     } catch (error) {
-      // Set authenticated to false
       setIsAuthenticated(false);
-      
-      // Re-throw the error for the component to handle
       throw error;
     }
   };

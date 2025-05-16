@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText } from 'lucide-react';
+import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw } from 'lucide-react';
 import ClientModal from './components/ClientModal';
 import ReportGenerator from './components/ReportGenerator';
 import { clientService, Client } from '@/lib/services/clients';
 import { Toaster, toast } from 'react-hot-toast';
+import DocumentViewer from '@/components/DocumentViewer';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 // Client Delete Confirmation Modal
 function DeleteConfirmationModal({ 
@@ -90,6 +92,20 @@ function DeleteConfirmationModal({
 // New ClientDetailsModal component
 function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onClose: () => void; client: Client | null }) {
   if (!isOpen || !client) return null;
+
+  // Prepare document list for the DocumentViewer
+  const documents = [
+    { type: 'nic_proof', url: client.nic_proof || null, label: 'NIC Proof' },
+    { type: 'dob_proof', url: client.dob_proof || null, label: 'Date of Birth Proof' },
+    { type: 'business_registration', url: client.business_registration || null, label: 'Business Registration' },
+    { type: 'svat_proof', url: client.svat_proof || null, label: 'SVAT Proof' },
+    { type: 'vat_proof', url: client.vat_proof || null, label: 'VAT Proof' },
+    { type: 'coverage_proof', url: client.coverage_proof || null, label: 'Coverage Proof' },
+    { type: 'sum_insured_proof', url: client.sum_insured_proof || null, label: 'Sum Insured Proof' },
+    { type: 'policy_fee_invoice', url: client.policy_fee_invoice || null, label: 'Policy Fee Invoice' },
+    { type: 'vat_fee_debit_note', url: client.vat_fee_debit_note || null, label: 'VAT Debit Note' },
+    { type: 'payment_receipt_proof', url: client.payment_receipt_proof || null, label: 'Payment Receipt' },
+  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -259,6 +275,11 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
             </div>
           </div>
         </div>
+
+        {/* Add DocumentViewer section */}
+        <div className="p-6 border-t border-gray-200">
+          <DocumentViewer clientId={client.id || ''} documents={documents} />
+        </div>
       </div>
     </div>
   );
@@ -366,6 +387,8 @@ export default function ManagerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <LoadingOverlay isLoading={isLoading} message="Processing data..." />
+      
       <Toaster 
         position="top-right" 
         toastOptions={{

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { clientService, Client as ClientType } from '@/lib/services/clients';
 import { toast } from 'react-hot-toast';
+import DocumentUpload from '@/components/DocumentUpload';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -26,55 +27,63 @@ interface ClientErrors {
   policy_period_to?: string;
 }
 
+// Default empty client state to use for resetting
+const defaultClientState: Partial<ClientType> = {
+  id: '',
+  introducer_code: '',
+  customer_type: '',
+  product: '',
+  policy_: '',
+  insurance_provider: '',
+  branch: '',
+  client_name: '',
+  street1: '',
+  street2: '',
+  city: '',
+  district: '',
+  province: '',
+  telephone: '',
+  mobile_no: '',
+  contact_person: '',
+  email: '',
+  social_media: '',
+  nic_proof: '',
+  dob_proof: '',
+  business_registration: '',
+  svat_proof: '',
+  vat_proof: '',
+  coverage_proof: '',
+  sum_insured_proof: '',
+  policy_fee_invoice: '',
+  vat_fee_debit_note: '',
+  payment_receipt_proof: '',
+  policy_type: '',
+  policy_no: '',
+  policy_period_from: '',
+  policy_period_to: '',
+  coverage: '',
+  sum_insured: 0,
+  basic_premium: 0,
+  srcc_premium: 0,
+  tc_premium: 0,
+  net_premium: 0,
+  stamp_duty: 0,
+  admin_fees: 0,
+  road_safety_fee: 0,
+  policy_fee: 0,
+  vat_fee: 0,
+  total_invoice: 0,
+  debit_note: '',
+  payment_receipt: '',
+  commission_type: '',
+  commission_basic: 0,
+  commission_srcc: 0,
+  commission_tc: 0,
+  policies: 0
+};
+
 export default function ClientModal({ isOpen, onClose, client, onClientSaved }: ClientModalProps) {
-  const [formData, setFormData] = useState<Partial<ClientType>>({
-    id: '',
-    introducer_code: '',
-    customer_type: '',
-    product: '',
-    policy_: '',
-    insurance_provider: '',
-    branch: '',
-    client_name: '',
-    street1: '',
-    street2: '',
-    city: '',
-    district: '',
-    province: '',
-    telephone: '',
-    mobile_no: '',
-    contact_person: '',
-    email: '',
-    social_media: '',
-    nic_proof: '',
-    dob_proof: '',
-    business_registration: '',
-    svat_proof: '',
-    vat_proof: '',
-    policy_type: '',
-    policy_no: '',
-    policy_period_from: '',
-    policy_period_to: '',
-    coverage: '',
-    sum_insured: 0,
-    basic_premium: 0,
-    srcc_premium: 0,
-    tc_premium: 0,
-    net_premium: 0,
-    stamp_duty: 0,
-    admin_fees: 0,
-    road_safety_fee: 0,
-    policy_fee: 0,
-    vat_fee: 0,
-    total_invoice: 0,
-    debit_note: '',
-    payment_receipt: '',
-    commission_type: '',
-    commission_basic: 0,
-    commission_srcc: 0,
-    commission_tc: 0,
-    policies: 0
-  });
+  const [formData, setFormData] = useState<Partial<ClientType>>({ ...defaultClientState });
   const [errors, setErrors] = useState<ClientErrors>({});
 
   useEffect(() => {
@@ -85,56 +94,10 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
       );
       setFormData(safeClient);
     } else {
-      setFormData({
-        id: '',
-        introducer_code: '',
-        customer_type: '',
-        product: '',
-        policy_: '',
-        insurance_provider: '',
-        branch: '',
-        client_name: '',
-        street1: '',
-        street2: '',
-        city: '',
-        district: '',
-        province: '',
-        telephone: '',
-        mobile_no: '',
-        contact_person: '',
-        email: '',
-        social_media: '',
-        nic_proof: '',
-        dob_proof: '',
-        business_registration: '',
-        svat_proof: '',
-        vat_proof: '',
-        policy_type: '',
-        policy_no: '',
-        policy_period_from: '',
-        policy_period_to: '',
-        coverage: '',
-        sum_insured: 0,
-        basic_premium: 0,
-        srcc_premium: 0,
-        tc_premium: 0,
-        net_premium: 0,
-        stamp_duty: 0,
-        admin_fees: 0,
-        road_safety_fee: 0,
-        policy_fee: 0,
-        vat_fee: 0,
-        total_invoice: 0,
-        debit_note: '',
-        payment_receipt: '',
-        commission_type: '',
-        commission_basic: 0,
-        commission_srcc: 0,
-        commission_tc: 0,
-        policies: 0
-      });
+      // Reset to empty state when adding a new client
+      setFormData({ ...defaultClientState });
     }
-  }, [client]);
+  }, [client, isOpen]);
 
   const validateForm = () => {
     const newErrors: ClientErrors = {};
@@ -181,6 +144,18 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle document URL updates
+  const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
+    setFormData({ ...formData, [documentType]: url });
+  };
+
+  // Modified to ensure form is reset when closed
+  const handleClose = () => {
+    setFormData({ ...defaultClientState });
+    setErrors({});
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -194,8 +169,6 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           delete clientData.id;
         }
         
-        console.log('Submitting client data:', JSON.stringify(clientData, null, 2));
-        
         if (client) {
           // Update existing client
           await clientService.updateClient(client.id as string, clientData);
@@ -206,12 +179,15 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         } else {
           // Create new client
           const newClientId = await clientService.createClient(clientData as ClientType);
-          console.log('New client created with ID:', newClientId);
           toast.success(`Client added successfully`, {
             duration: 4000,
             position: 'top-center',
           });
         }
+        
+        // Reset form data after successful submission
+        setFormData({ ...defaultClientState });
+        setErrors({});
         
         // Call the callback function if provided
         if (onClientSaved) {
@@ -247,7 +223,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             {client ? 'Edit Client' : 'Add New Client'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-gray-700"
           >
             <X className="w-6 h-6" />
@@ -533,66 +509,96 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           </div>
 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Documents</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                NIC Proof
-              </label>
-              <input
-                type="text"
-                value={formData.nic_proof}
-                onChange={(e) => setFormData({ ...formData, nic_proof: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="nic_proof"
+              label="NIC Proof"
+              existingUrl={formData.nic_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
+              onDelete={() => setFormData({ ...formData, nic_proof: '' })}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                DOB Proof
-              </label>
-              <input
-                type="text"
-                value={formData.dob_proof}
-                onChange={(e) => setFormData({ ...formData, dob_proof: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="dob_proof"
+              label="DOB Proof"
+              existingUrl={formData.dob_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
+              onDelete={() => setFormData({ ...formData, dob_proof: '' })}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Business Registration
-              </label>
-              <input
-                type="text"
-                value={formData.business_registration}
-                onChange={(e) => setFormData({ ...formData, business_registration: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="business_registration"
+              label="Business Registration"
+              existingUrl={formData.business_registration as string}
+              onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
+              onDelete={() => setFormData({ ...formData, business_registration: '' })}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                SVAT Proof
-              </label>
-              <input
-                type="text"
-                value={formData.svat_proof}
-                onChange={(e) => setFormData({ ...formData, svat_proof: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="svat_proof"
+              label="SVAT Proof"
+              existingUrl={formData.svat_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
+              onDelete={() => setFormData({ ...formData, svat_proof: '' })}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                VAT Proof
-              </label>
-              <input
-                type="text"
-                value={formData.vat_proof}
-                onChange={(e) => setFormData({ ...formData, vat_proof: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="vat_proof"
+              label="VAT Proof"
+              existingUrl={formData.vat_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
+              onDelete={() => setFormData({ ...formData, vat_proof: '' })}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="coverage_proof"
+              label="Coverage Proof"
+              existingUrl={formData.coverage_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
+              onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="sum_insured_proof"
+              label="Sum Insured Proof"
+              existingUrl={formData.sum_insured_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
+              onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="policy_fee_invoice"
+              label="Policy Fee Invoice"
+              existingUrl={formData.policy_fee_invoice as string}
+              onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
+              onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="vat_fee_debit_note"
+              label="VAT Debit Note"
+              existingUrl={formData.vat_fee_debit_note as string}
+              onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
+              onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="payment_receipt_proof"
+              label="Payment Receipt"
+              existingUrl={formData.payment_receipt_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
+              onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
+            />
           </div>
 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Policy Information</h3>
@@ -892,7 +898,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-6 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Cancel

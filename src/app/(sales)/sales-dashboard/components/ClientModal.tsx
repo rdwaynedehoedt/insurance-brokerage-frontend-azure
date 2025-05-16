@@ -35,26 +35,31 @@ interface ClientModalProps {
   mode: 'add' | 'edit';
 }
 
-export default function ClientModal({ isOpen, onClose, onSubmit, client, mode }: ClientModalProps) {
-  const [formData, setFormData] = useState<Client>({
-    name: '',
-    contact: {
-      phone: '',
-      email: ''
-    },
-    nic: '',
-    address: '',
-    notes: '',
-    salespersonId: 'SP001' // This should come from the logged-in user
-  });
+// Default empty client state
+const defaultClientState: Client = {
+  name: '',
+  contact: {
+    phone: '',
+    email: ''
+  },
+  nic: '',
+  address: '',
+  notes: '',
+  salespersonId: 'SP001' // This should come from the logged-in user
+};
 
+export default function ClientModal({ isOpen, onClose, onSubmit, client, mode }: ClientModalProps) {
+  const [formData, setFormData] = useState<Client>({...defaultClientState});
   const [errors, setErrors] = useState<ClientErrors>({});
 
   useEffect(() => {
     if (client && mode === 'edit') {
       setFormData(client);
+    } else if (mode === 'add') {
+      // Reset to default state when adding a new client
+      setFormData({...defaultClientState});
     }
-  }, [client, mode]);
+  }, [client, mode, isOpen]);
 
   const validateForm = () => {
     const newErrors: ClientErrors = {};
@@ -85,10 +90,19 @@ export default function ClientModal({ isOpen, onClose, onSubmit, client, mode }:
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle clean-up when modal is closed
+  const handleClose = () => {
+    setErrors({});
+    setFormData({...defaultClientState});
+    onClose();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       onSubmit(formData);
+      setFormData({...defaultClientState});
+      setErrors({});
       onClose();
     }
   };
@@ -103,7 +117,7 @@ export default function ClientModal({ isOpen, onClose, onSubmit, client, mode }:
             {mode === 'add' ? 'Add New Client' : 'Edit Client'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-gray-700"
           >
             <X className="w-6 h-6" />
@@ -221,7 +235,7 @@ export default function ClientModal({ isOpen, onClose, onSubmit, client, mode }:
           <div className="mt-6 flex justify-end space-x-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Cancel

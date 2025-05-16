@@ -1,14 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Users, FileText, Home, Download, LogOut, Plus, Search } from 'lucide-react';
+import { Users, FileText, Home, Download, LogOut, Plus, Search, Eye, X, Trash, Edit } from 'lucide-react';
 import StatsCards from './components/StatsCards';
 import ClientsList from './components/ClientsList';
+import ClientModal from './components/ClientModal';
+import { clientService, Client } from '@/lib/services/clients';
+import { Toaster, toast } from 'react-hot-toast';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 export default function SalesDashboard() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [clientToView, setClientToView] = useState<Client | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -24,6 +37,29 @@ export default function SalesDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <LoadingOverlay isLoading={isLoading} message="Processing data..." />
+      
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            style: {
+              background: 'green',
+            },
+          },
+          error: {
+            style: {
+              background: 'red',
+            },
+          },
+        }}
+      />
+      
       {/* Left Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 fixed h-full">
         <div className="p-6">

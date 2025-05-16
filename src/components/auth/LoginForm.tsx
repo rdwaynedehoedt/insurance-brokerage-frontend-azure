@@ -20,19 +20,8 @@ export default function LoginForm() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
-    // Add basic environment information for debugging
-    if (process.env.NODE_ENV !== 'development') {
-      const info = {
-        env: process.env.NODE_ENV,
-        apiBase: process.env.NEXT_PUBLIC_API_BASE ? 'SET' : 'NOT_SET',
-        hasApiToken: process.env.NEXT_PUBLIC_API_TOKEN ? 'YES' : 'NO'
-      };
-      setDebugInfo(JSON.stringify(info));
-    }
-    
     // Security check for credentials in URL
     const hasEmailInUrl = searchParams.has('email');
     const hasPasswordInUrl = searchParams.has('password');
@@ -81,18 +70,9 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Ensure default form submission is prevented
-    if (e && e.preventDefault) e.preventDefault();
-    
     setError(null);
     
     if (!validateForm()) {
-      return;
-    }
-    
-    // Prevent multiple submissions
-    if (isLoading) {
       return;
     }
     
@@ -104,9 +84,7 @@ export default function LoginForm() {
         password: formData.password,
       }, true); // Always remember user
     } catch (error) {
-      // Error handling
       if (error instanceof Error) {
-        // Set error state for display
         if (error.message.includes('401') || error.message.includes('credentials')) {
           setError('Invalid email or password');
         } else if (error.message.includes('403') || error.message.includes('active')) {
@@ -114,15 +92,9 @@ export default function LoginForm() {
         } else {
           setError('An error occurred. Please try again later.');
         }
-        
-        // Add a small delay to ensure the error is displayed before any other action
-        await new Promise(resolve => setTimeout(resolve, 100));
       } else {
         setError('An unexpected error occurred');
       }
-      
-      // Stop any potential redirect that might be causing a refresh
-      return false;
     } finally {
       setIsLoading(false);
     }
@@ -144,12 +116,6 @@ export default function LoginForm() {
     setShowPassword(!showPassword);
   };
 
-  // Add a debug click handler to log hidden debug info to console
-  const handleDebugClick = () => {
-    console.log('Debug info:', debugInfo);
-    console.log('API Base:', process.env.NEXT_PUBLIC_API_BASE);
-  };
-
   return (
     <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
       {securityWarning && (
@@ -162,12 +128,6 @@ export default function LoginForm() {
               <p className="text-sm text-yellow-700">{securityWarning}</p>
             </div>
           </div>
-        </div>
-      )}
-      
-      {debugInfo && process.env.NODE_ENV !== 'development' && (
-        <div onClick={handleDebugClick} className="text-xs text-gray-300 text-center cursor-pointer">
-          v1.0.1
         </div>
       )}
       
