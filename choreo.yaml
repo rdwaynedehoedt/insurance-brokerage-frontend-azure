@@ -4,6 +4,8 @@ serviceName: insurance-frontend
 port: 3000
 
 build:
+  type: docker
+  context: .
   dockerfile: Dockerfile
 
 environment:
