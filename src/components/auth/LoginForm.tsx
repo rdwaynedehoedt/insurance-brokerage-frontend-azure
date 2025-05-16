@@ -89,6 +89,8 @@ export default function LoginForm() {
           setError('Invalid email or password');
         } else if (error.message.includes('403') || error.message.includes('active')) {
           setError('Your account is not active. Please contact administrator.');
+        } else if (error.message.includes('No response') || error.message.includes('network') || error.message.includes('connect')) {
+          setError('Cannot connect to server. Please check your connection or contact support.');
         } else {
           setError('An error occurred. Please try again later.');
         }

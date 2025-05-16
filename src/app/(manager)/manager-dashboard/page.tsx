@@ -305,6 +305,12 @@ export default function ManagerDashboard() {
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
+  // Load clients on initial render to fix the "0 Total Clients" issue
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  // Also load clients when changing tabs if needed
   useEffect(() => {
     if (activeTab === 'clients' || activeTab === 'reports') {
       fetchClients();
@@ -479,7 +485,16 @@ export default function ManagerDashboard() {
                     </div>
                     <div>
                       <span className="text-sm text-gray-600">Total Clients</span>
-                      <div className="text-2xl font-bold text-gray-900">{clients.length}</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {isLoading ? (
+                          <div className="flex items-center">
+                            <div className="h-5 w-5 border-2 border-orange-200 border-t-orange-600 rounded-full animate-spin mr-2"></div>
+                            <span className="text-gray-500 text-lg">Loading...</span>
+                          </div>
+                        ) : (
+                          clients.length
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

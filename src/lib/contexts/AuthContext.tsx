@@ -36,39 +36,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     setIsLoading(true);
+    
+    // Add a timeout to prevent infinite loading
+    const timeoutPromise = new Promise<{timedOut: boolean}>((resolve) => {
+      setTimeout(() => {
+        resolve({ timedOut: true });
+      }, 10000); // 10 seconds timeout
+    });
+    
     try {
-      if (authService.isAuthenticated()) {
-        // First try to get user from storage for faster UI loading
-        const storedUser = authService.getStoredUser();
-        if (storedUser) {
-          setUser(storedUser);
-          setIsAuthenticated(true);
-        }
-
-        try {
-          // Then fetch fresh user data from API
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-          setIsAuthenticated(true);
-        } catch (error) {
-          if (storedUser) {
-            // If API fails but we have stored user, keep them logged in
-            // They might be offline or API might be temporarily down
-          } else {
-            // If no stored user and API fails, log them out
-            authService.logout();
-            setUser(null);
-            setIsAuthenticated(false);
-          }
-        }
-      } else {
-        setUser(null);
+      // Race between auth check and timeout
+      const result = await Promise.race([
+        authService.isAuthenticated() 
+          ? authService.getCurrentUser().then(user => ({ user })).catch(() => ({ authError: true }))
+          : Promise.resolve({ noAuth: true }),
+        timeoutPromise
+      ]);
+      
+      if ('timedOut' in result) {
+        console.error('Authentication check timed out');
         setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+      
+      if ('noAuth' in result || 'authError' in result) {
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+      
+      if ('user' in result) {
+        setUser(result.user);
+        setIsAuthenticated(true);
       }
     } catch (error) {
-      authService.logout();
-      setUser(null);
+      console.error('Auth check error:', error);
       setIsAuthenticated(false);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }

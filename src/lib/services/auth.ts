@@ -11,6 +11,7 @@ const TOKEN_COOKIE_NAME = 'token';
 const USER_STORAGE_KEY = 'user_data';
 const TOKEN_EXPIRY_DAYS = 7;
 const CSRF_TOKEN_HEADER = 'X-CSRF-Token';
+const API_TIMEOUT = 8000; // 8 seconds timeout for API requests
 
 export interface LoginCredentials {
   email: string;
@@ -124,7 +125,12 @@ class AuthService {
         }
       }
 
-      const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, credentials);
+      const response = await axios.post<AuthResponse>(
+        `${API_BASE}/auth/login`, 
+        credentials,
+        { timeout: API_TIMEOUT }
+      );
+      
       const { token, user } = response.data;
       
       this.setAuthToken(token, rememberMe);
@@ -169,7 +175,11 @@ class AuthService {
         axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
       }
       
-      const response = await axios.get<User>(`${API_BASE}/auth/me`);
+      const response = await axios.get<User>(
+        `${API_BASE}/auth/me`,
+        { timeout: API_TIMEOUT }
+      );
+      
       const user = response.data;
       
       if (typeof window !== 'undefined') {

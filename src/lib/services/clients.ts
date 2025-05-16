@@ -4,6 +4,7 @@ import { authService } from './auth';
 // Use the new Choreo API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || '';
+const API_TIMEOUT = 8000; // 8 seconds timeout
 
 export interface Client {
   id?: string;
@@ -69,6 +70,7 @@ interface ApiResponse<T> {
 
 const apiClient = axios.create({
   baseURL: API_BASE,
+  timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -163,17 +165,89 @@ export const clientService = {
       // Remove the id field from the update data (we're using it in the URL)
       delete cleanedData.id;
       
-      // Convert any null values to empty strings to prevent issues
+      // Remove timestamp fields - these should be handled by the server
+      delete (cleanedData as any).created_at;
+      delete (cleanedData as any).updated_at;
+      
+      // Convert any null values to empty strings for string fields
+      // and to 0 for number fields to prevent issues
       Object.keys(cleanedData).forEach(key => {
-        if (cleanedData[key as keyof typeof cleanedData] === null) {
+        const value = cleanedData[key as keyof typeof cleanedData];
+        if (value === null) {
+          // Check if it should be a number
+          const numericFields = [
+            'sum_insured', 'basic_premium', 'srcc_premium', 'tc_premium', 
+            'net_premium', 'stamp_duty', 'admin_fees', 'road_safety_fee', 
+            'policy_fee', 'vat_fee', 'total_invoice', 'commission_basic',
+            'commission_srcc', 'commission_tc', 'policies'
+          ];
+          
           // @ts-ignore - This is safe because we've verified the key exists
-          cleanedData[key] = '';
+          cleanedData[key] = numericFields.includes(key) ? 0 : '';
+        }
+        
+        // Ensure numeric fields are actually numbers
+        if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+          const numericFields = [
+            'sum_insured', 'basic_premium', 'srcc_premium', 'tc_premium', 
+            'net_premium', 'stamp_duty', 'admin_fees', 'road_safety_fee', 
+            'policy_fee', 'vat_fee', 'total_invoice', 'commission_basic',
+            'commission_srcc', 'commission_tc', 'policies'
+          ];
+          
+          if (numericFields.includes(key)) {
+            // @ts-ignore - This is safe because we're ensuring it's a number
+            cleanedData[key] = Number(value);
+          }
         }
       });
       
-      await apiClient.put(`/clients/${id}`, cleanedData);
-    } catch (error) {
+      // Remove any potentially problematic fields that could cause SQL issues
+      const problematicKeys = ['__v', '_id', 'createdAt', 'updatedAt'];
+      problematicKeys.forEach(key => {
+        if (key in cleanedData) {
+          delete cleanedData[key as keyof typeof cleanedData];
+        }
+      });
+      
+      // Log what we're sending to the API
+      console.log(`Sending sanitized data for client ${id}:`, JSON.stringify(cleanedData, null, 2));
+      
+      // Set a timeout for the request and include better error handling
+      try {
+        const response = await apiClient.put(`/clients/${id}`, cleanedData, {
+          timeout: 15000, // 15 seconds timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('Update response:', response.status, response.data);
+        return;
+      } catch (apiError: any) {
+        // Handle specific API errors
+        console.error(`API Error updating client ${id}:`, apiError);
+        
+        // Get detailed error information from the response if available
+        if (apiError.response) {
+          console.error('Error status:', apiError.response.status);
+          console.error('Error details:', apiError.response.data);
+          
+          const serverMessage = apiError.response.data.message || 'Unknown server error';
+          const serverErrorDetails = apiError.response.data.error;
+          
+          throw new Error(`Server error: ${serverMessage}${serverErrorDetails ? ` - ${serverErrorDetails}` : ''}`);
+        } else if (apiError.request) {
+          // Request was made but no response received (network issue)
+          throw new Error('Network error: No response received from server. Please check your connection.');
+        } else {
+          // Error in setting up the request
+          throw apiError;
+        }
+      }
+    } catch (error: any) {
       console.error(`Error updating client ${id}:`, error);
+      // Error was already handled in the inner try-catch
       throw error;
     }
   },

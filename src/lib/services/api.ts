@@ -2,9 +2,11 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+const API_TIMEOUT = 8000; // 8 seconds timeout
 
 const apiClient = axios.create({
   baseURL,
+  timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },

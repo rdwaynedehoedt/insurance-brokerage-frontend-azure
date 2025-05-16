@@ -146,7 +146,23 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
 
   // Handle document URL updates
   const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
-    setFormData({ ...formData, [documentType]: url });
+    // Ensure URL doesn't have trailing or leading whitespace
+    const trimmedUrl = url.trim();
+    
+    // Check if the URL is a long Azure Blob Storage URL with SAS token
+    // These can cause issues when sent in requests due to their length
+    if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
+      console.log(`Truncating long Azure URL for ${documentType}`);
+      
+      // Just store the URL without the SAS token for database storage
+      // The secure document endpoint will handle token generation when needed
+      const urlParts = trimmedUrl.split('?');
+      const baseUrl = urlParts[0];
+      
+      setFormData({ ...formData, [documentType]: baseUrl });
+    } else {
+      setFormData({ ...formData, [documentType]: trimmedUrl });
+    }
   };
 
   // Modified to ensure form is reset when closed
@@ -168,6 +184,15 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         if (!client && clientData.id === '') {
           delete clientData.id;
         }
+        
+        // Trim all string fields to prevent issues with whitespace
+        Object.keys(clientData).forEach(key => {
+          const value = clientData[key as keyof typeof clientData];
+          if (typeof value === 'string') {
+            // @ts-ignore - This is safe because we've verified the value is a string
+            clientData[key] = value.trim();
+          }
+        });
         
         if (client) {
           // Update existing client
@@ -198,10 +223,44 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         onClose();
       } catch (error: any) {
         console.error('Error saving client:', error);
-        const errorMessage = error.response?.data?.message || 
-                            (error.message ? `${error.message}` : 'Failed to save client');
+        
+        // Extract error message from response if available
+        let errorMessage = 'Failed to save client';
+        let actionRequired = '';
+        
+        // Check for specific database error patterns
+        if (error.message) {
+          // Clean up complex SQL error messages to make them more user-friendly
+          if (error.message.includes('Database error') || error.message.includes('SQL')) {
+            errorMessage = 'Database error occurred while saving client';
+            
+            // Check for common issues
+            if (error.message.includes('duplicate')) {
+              errorMessage = 'This client already exists in the database';
+              actionRequired = 'Please check the client ID or details.';
+            } else if (error.message.includes('updated_at')) {
+              errorMessage = 'Error with date fields';
+              actionRequired = 'Please try again or contact support.';
+            } else if (error.message.includes('violates') || error.message.includes('constraint')) {
+              errorMessage = 'Invalid data provided for this client';
+              actionRequired = 'Please check all required fields.';
+            }
+          } else if (error.message.includes('Network error')) {
+            errorMessage = 'Connection issue with the server';
+            actionRequired = 'Please check your internet connection and try again.';
+          } else {
+            // Use the original error message
+            errorMessage = error.message;
+          }
+        }
+        
+        // Add action required if available
+        if (actionRequired) {
+          errorMessage = `${errorMessage}. ${actionRequired}`;
+        }
+        
         toast.error(errorMessage, {
-          duration: 4000,
+          duration: 6000, // Show longer for errors
           position: 'top-center',
         });
       }
@@ -517,6 +576,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.nic_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
               onDelete={() => setFormData({ ...formData, nic_proof: '' })}
+              readOnly={!!client && !!formData.nic_proof}
             />
 
             <DocumentUpload
@@ -526,6 +586,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.dob_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
               onDelete={() => setFormData({ ...formData, dob_proof: '' })}
+              readOnly={!!client && !!formData.dob_proof}
             />
 
             <DocumentUpload
@@ -535,6 +596,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.business_registration as string}
               onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
               onDelete={() => setFormData({ ...formData, business_registration: '' })}
+              readOnly={!!client && !!formData.business_registration}
             />
 
             <DocumentUpload
@@ -544,6 +606,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.svat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
               onDelete={() => setFormData({ ...formData, svat_proof: '' })}
+              readOnly={!!client && !!formData.svat_proof}
             />
 
             <DocumentUpload
@@ -553,6 +616,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.vat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
               onDelete={() => setFormData({ ...formData, vat_proof: '' })}
+              readOnly={!!client && !!formData.vat_proof}
             />
             
             <DocumentUpload
@@ -562,6 +626,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.coverage_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
               onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
+              readOnly={!!client && !!formData.coverage_proof}
             />
             
             <DocumentUpload
@@ -571,6 +636,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.sum_insured_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
               onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
+              readOnly={!!client && !!formData.sum_insured_proof}
             />
             
             <DocumentUpload
@@ -580,6 +646,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.policy_fee_invoice as string}
               onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
               onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
+              readOnly={!!client && !!formData.policy_fee_invoice}
             />
             
             <DocumentUpload
@@ -589,6 +656,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.vat_fee_debit_note as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
               onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
+              readOnly={!!client && !!formData.vat_fee_debit_note}
             />
             
             <DocumentUpload
@@ -598,6 +666,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.payment_receipt_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
               onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
+              readOnly={!!client && !!formData.payment_receipt_proof}
             />
           </div>
 

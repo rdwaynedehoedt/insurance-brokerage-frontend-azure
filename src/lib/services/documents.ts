@@ -1,34 +1,21 @@
+'use client';
+
 import { apiClient } from './api';
 
-// Define response types
-interface UploadDocumentResponse {
-  documentUrl: string;
-  message: string;
-  documentType: string;
-  clientId: string;
+export interface UploadDocumentResponse {
+  fileName: string;
+  url: string;
 }
 
-interface GetDocumentUrlResponse {
-  sasUrl: string;
-  expiresIn: string;
-}
-
-interface DeleteDocumentResponse {
-  message: string;
-}
-
-/**
- * Document service for handling document uploads and retrieval
- */
 export const documentService = {
   /**
    * Upload a document for a client
-   * @param clientId The client ID
-   * @param documentType The type of document (nic_proof, dob_proof, etc.)
-   * @param file The file to upload
-   * @returns The document URL
    */
-  async uploadDocument(clientId: string, documentType: string, file: File): Promise<string> {
+  async uploadDocument(
+    clientId: string,
+    documentType: string,
+    file: File
+  ): Promise<UploadDocumentResponse> {
     const formData = new FormData();
     formData.append('file', file);
     
@@ -42,33 +29,37 @@ export const documentService = {
       }
     );
     
-    return response.data.documentUrl;
+    return response.data;
   },
   
   /**
-   * Get a temporary URL for accessing a document
-   * @param clientId The client ID
-   * @param documentType The type of document
-   * @param blobUrl The blob URL from the database
-   * @returns A temporary SAS URL for accessing the document
+   * Get a secure URL for a document
+   * Note: This is now handled directly through the proxy endpoint,
+   * so there's no need to request a special URL
    */
-  async getDocumentUrl(clientId: string, documentType: string, blobUrl: string): Promise<string> {
-    const response = await apiClient.get<GetDocumentUrlResponse>(`/documents/${clientId}/${documentType}/url`, {
-      params: { blobUrl },
-    });
+  getSecureDocumentUrl(
+    clientId: string,
+    documentType: string,
+    fileName: string
+  ): string {
+    // Extract just the filename without path or query parameters
+    const baseFileName = fileName.split('/').pop()?.split('?')[0] || fileName;
     
-    return response.data.sasUrl;
+    // Return the secure endpoint URL
+    return `${process.env.NEXT_PUBLIC_API_BASE}/documents/secure/${clientId}/${documentType}/${baseFileName}`;
   },
   
   /**
    * Delete a document
-   * @param clientId The client ID
-   * @param documentType The type of document
-   * @param blobUrl The blob URL to delete
    */
-  async deleteDocument(clientId: string, documentType: string, blobUrl: string): Promise<void> {
-    await apiClient.delete<DeleteDocumentResponse>(`/documents/${clientId}/${documentType}`, {
-      params: { blobUrl },
-    });
-  },
+  async deleteDocument(
+    clientId: string,
+    documentType: string,
+    fileName: string
+  ): Promise<void> {
+    // Extract just the filename without path or query parameters
+    const baseFileName = fileName.split('/').pop()?.split('?')[0] || fileName;
+    
+    await apiClient.delete(`/documents/delete/${clientId}/${documentType}/${baseFileName}`);
+  }
 }; 
