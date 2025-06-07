@@ -97,41 +97,12 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle auth errors
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Handle 401 Unauthorized errors
-    if (error.response && error.response.status === 401) {
-      console.log('Authentication error - redirecting to login');
-      // Check if we're not already on the login page to prevent redirect loops
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        // Clear auth data and redirect to login
-        authService.logout();
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const clientService = {
   async getAllClients(): Promise<Client[]> {
     try {
-      // First check if we're authenticated
-      if (!authService.isAuthenticated()) {
-        console.log('Not authenticated, returning empty clients array');
-        return [];
-      }
-      
       const response = await apiClient.get<ApiResponse<Client[]>>('/clients');
       return response.data.data;
-    } catch (error: any) {
-      // Handle specific errors
-      if (error.response && error.response.status === 401) {
-        console.error('Authentication error while fetching clients');
-        return []; // Return empty array instead of throwing
-      }
+    } catch (error) {
       console.error('Error fetching clients:', error);
       throw error;
     }

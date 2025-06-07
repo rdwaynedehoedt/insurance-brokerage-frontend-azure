@@ -286,7 +286,7 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
 }
 
 export default function ManagerDashboard() {
-  const { logout, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('clients');
   const [searchTerm, setSearchTerm] = useState('');
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
@@ -306,19 +306,17 @@ export default function ManagerDashboard() {
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
-  // Load clients on initial render only if authenticated
+  // Load clients on initial render to fix the "0 Total Clients" issue
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      fetchClients();
-    }
-  }, [isAuthenticated, authLoading]);
+    fetchClients();
+  }, []);
 
-  // Also load clients when changing tabs if needed and authenticated
+  // Also load clients when changing tabs if needed
   useEffect(() => {
-    if (isAuthenticated && (activeTab === 'clients' || activeTab === 'reports')) {
+    if (activeTab === 'clients' || activeTab === 'reports') {
       fetchClients();
     }
-  }, [activeTab, isAuthenticated]);
+  }, [activeTab]);
 
   const fetchClients = async () => {
     setIsLoading(true);
