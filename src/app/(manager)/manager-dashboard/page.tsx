@@ -318,6 +318,7 @@ export default function ManagerDashboard() {
     }
   }, [activeTab]);
 
+  
   const fetchClients = async () => {
     setIsLoading(true);
     try {
