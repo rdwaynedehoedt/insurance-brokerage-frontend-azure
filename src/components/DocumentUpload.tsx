@@ -68,7 +68,7 @@ const DocumentUpload = ({
         console.log('Extracted filename:', fileName);
         
         // Get a secure URL to the document
-        const secureUrl = documentService.getSecureDocumentUrl(clientId, documentType, fileName);
+        const secureUrl = await documentService.getSecureDocumentUrl(clientId, documentType, fileName);
         console.log('Generated secure URL:', secureUrl);
         
         // Set document URL and determine file type
