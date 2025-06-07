@@ -287,7 +287,7 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
 
 export default function ManagerDashboard() {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('clients');
   const [searchTerm, setSearchTerm] = useState('');
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -298,10 +298,11 @@ export default function ManagerDashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [viewTable, setViewTable] = useState(false);
 
   const menuItems = [
-    { id: 'overview', label: 'Overview', icon: Home },
-    { id: 'clients', label: 'All Clients', icon: Users },
+    // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
+    { id: 'clients', label: 'Underwriters', icon: Users },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
@@ -458,7 +459,9 @@ export default function ManagerDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
-                {menuItems.find(item => item.id === activeTab)?.label}
+                {activeTab === 'clients' 
+                  ? 'Underwriters' 
+                  : menuItems.find(item => item.id === activeTab)?.label || ''}
               </h2>
               <p className="text-gray-600 mt-1">Welcome back, Manager!</p>
             </div>
@@ -474,9 +477,9 @@ export default function ManagerDashboard() {
         </header>
 
         <div className="p-8">
-          {activeTab === 'overview' && (
+          {/* Comment out the Overview section but keep it in the code */}
+          {/* {activeTab === 'overview' && (
             <div className="space-y-8">
-              {/* Stats Overview */}
               <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center">
@@ -500,7 +503,7 @@ export default function ManagerDashboard() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* All Clients Tab */}
           {activeTab === 'clients' && (
@@ -526,78 +529,87 @@ export default function ManagerDashboard() {
                     <Plus className="w-4 h-4" />
                       Add Client
                     </button>
+                    <button
+                      onClick={() => setViewTable(!viewTable)}
+                      className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      <Eye className="w-4 h-4" />
+                      {viewTable ? 'Hide Table' : 'View Table'}
+                    </button>
                 </div>
               </div>
 
-              {/* Clients Table */}
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                  {isLoading ? (
-                    <div className="p-8 text-center">
-                      <p>Loading clients...</p>
-                    </div>
-                  ) : filteredClients.length === 0 ? (
-                    <div className="p-8 text-center">
-                      <p>No clients found.</p>
-                    </div>
-                  ) : (
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy #</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredClients.map((client) => (
-                      <tr key={client.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{client.client_name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{client.mobile_no}</div>
-                              <div className="text-sm text-gray-500">{client.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{client.product}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{client.policy_no}</div>
-                        </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex items-center justify-end space-x-3">
-                                <button
-                                  onClick={() => handleViewClientDetails(client)}
-                                  className="text-blue-600 hover:text-blue-900 flex items-center"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Details
-                                </button>
-                          <button
-                            onClick={() => handleEditClient(client)}
-                                  className="text-orange-600 hover:text-orange-900"
-                          >
-                            Edit
-                          </button>
-                                <button
-                                  onClick={() => handleDeleteClient(client)}
-                                  className="text-red-600 hover:text-red-900 flex items-center"
-                                >
-                                  <Trash className="w-4 h-4 mr-1" />
-                            Delete
-                          </button>
-                              </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                  )}
+              {/* Clients Table - Only show when viewTable is true */}
+              {viewTable && (
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    {isLoading ? (
+                      <div className="p-8 text-center">
+                        <p>Loading clients...</p>
+                      </div>
+                    ) : filteredClients.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <p>No clients found.</p>
+                      </div>
+                    ) : (
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy #</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {filteredClients.map((client) => (
+                            <tr key={client.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">{client.client_name}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{client.mobile_no}</div>
+                                <div className="text-sm text-gray-500">{client.email}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{client.product}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{client.policy_no}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex items-center justify-end space-x-3">
+                                  <button
+                                    onClick={() => handleViewClientDetails(client)}
+                                    className="text-blue-600 hover:text-blue-900 flex items-center"
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Details
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditClient(client)}
+                                    className="text-orange-600 hover:text-orange-900"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteClient(client)}
+                                    className="text-red-600 hover:text-red-900 flex items-center"
+                                  >
+                                    <Trash className="w-4 h-4 mr-1" />
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

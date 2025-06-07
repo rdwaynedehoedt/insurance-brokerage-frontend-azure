@@ -50,8 +50,26 @@ const DocumentUpload = ({
     if (existingUrl) {
       try {
         setIsLoading(true);
+        
+        console.log('Viewing document with URL:', existingUrl);
+        
+        // Set document URL directly if it's a direct Azure URL
+        if (existingUrl.includes('blob.core.windows.net')) {
+          console.log('Using direct Azure blob URL');
+          setDocumentUrl(existingUrl);
+          setFileType(getFileTypeFromUrl(existingUrl) as 'image' | 'pdf' | null);
+          setIsViewModalOpen(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Extract the filename from the URL
         const fileName = existingUrl.split('/').pop()?.split('?')[0] || '';
+        console.log('Extracted filename:', fileName);
+        
+        // Get a secure URL to the document
         const secureUrl = documentService.getSecureDocumentUrl(clientId, documentType, fileName);
+        console.log('Generated secure URL:', secureUrl);
         
         // Set document URL and determine file type
         setDocumentUrl(secureUrl);
@@ -232,17 +250,48 @@ const DocumentUpload = ({
                       src={documentUrl}
                       alt={label}
                       className="max-w-full max-h-[70vh] object-contain"
+                      onError={(e) => {
+                        console.error('Error loading image');
+                        
+                        // Try direct URL as fallback if not already using it
+                        if (existingUrl && !e.currentTarget.src.includes('broken-image') && 
+                            e.currentTarget.src !== existingUrl) {
+                          console.log('Trying direct URL as fallback');
+                          e.currentTarget.src = existingUrl;
+                          return;
+                        }
+                        
+                        toast.error('Failed to load image');
+                        // Display broken image placeholder
+                        e.currentTarget.src = '/images/broken-image.png';
+                      }}
                     />
                   ) : fileType === 'pdf' ? (
                     <iframe
                       src={documentUrl}
                       className="w-full h-[70vh]"
-                      title={label}
+                      onError={() => {
+                        console.error('Error loading PDF');
+                        toast.error('Failed to load PDF');
+                        
+                        // Show download link instead
+                        if (existingUrl) {
+                          window.open(existingUrl, '_blank');
+                        }
+                      }}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center">
                       <FileText className="w-20 h-20 text-gray-400 mb-4" />
                       <p className="text-gray-600">This document type cannot be previewed directly.</p>
+                      <a 
+                        href={documentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="mt-4 text-blue-500 hover:text-blue-700"
+                      >
+                        Download Document
+                      </a>
                     </div>
                   )}
                 </div>
