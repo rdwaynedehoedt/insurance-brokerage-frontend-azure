@@ -9,6 +9,7 @@ import { clientService, Client } from '@/lib/services/clients';
 import { Toaster, toast } from 'react-hot-toast';
 import DocumentViewer from '@/components/DocumentViewer';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import Image from 'next/image';
 
 // Client Delete Confirmation Modal
 function DeleteConfirmationModal({ 
@@ -420,10 +421,21 @@ export default function ManagerDashboard() {
       {/* Left Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 fixed h-full">
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-orange-700">Manager Portal</h1>
+          <div className="flex flex-col items-center mb-4">
+            <Image 
+              src="/images/CIB-Logo.png" 
+              alt="Ceilao Insurance Brokerage" 
+              width={120} 
+              height={60} 
+              priority
+              className="mb-2"
+            />
+            <h1 className="text-xl font-bold text-orange-700">Ceilao Insurance</h1>
+            <p className="text-sm text-gray-600">Manager Portal</p>
+          </div>
         </div>
         
-        <nav className="mt-6">
+        <nav className="mt-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (

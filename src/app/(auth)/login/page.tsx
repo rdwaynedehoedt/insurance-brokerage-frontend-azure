@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import LoginForm from '@/components/auth/LoginForm';
-import { Building2 } from 'lucide-react';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { useAuth } from '@/lib/contexts/AuthContext';
 
@@ -24,10 +23,16 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
           {/* Logo */}
           <div className="flex flex-col items-center">
-            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 mb-4">
-              <Building2 size={32} className="text-orange-700" />
+            <div className="mb-4">
+              <Image 
+                src="/images/CIB-Logo.png" 
+                alt="Ceilao Insurance Brokerage" 
+                width={120} 
+                height={60} 
+                priority
+              />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Insurance Brokerage</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Ceilao Insurance Brokerage</h1>
           </div>
           
           <div>

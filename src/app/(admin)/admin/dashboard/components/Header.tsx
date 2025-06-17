@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, Shield } from 'lucide-react';
+import { Menu } from 'lucide-react';
+import Image from 'next/image';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,7 +22,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-6 w-6" />
           </button>
           <div className="flex items-center space-x-2 ml-2">
-            <Shield className="h-8 w-8 text-orange-600" />
+            <Image 
+              src="/images/CIB-Logo.png" 
+              alt="Ceilao Insurance Brokerage" 
+              width={40} 
+              height={40} 
+              className="h-8 w-auto"
+            />
             <span className="text-xl font-bold text-gray-800">Admin Panel</span>
           </div>
         </div>
