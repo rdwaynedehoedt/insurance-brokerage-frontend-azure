@@ -286,17 +286,33 @@ export const clientService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      // We need to use different headers for multipart/form-data
-      const response = await apiClient.post<{
-        success: boolean;
-        count: number;
-        ids: string[];
-        message: string;
-      }>('/clients/import-csv', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Try the direct route first, then fall back to the nested route if it fails
+      let response;
+      try {
+        console.log('Trying direct import endpoint: /import-csv');
+        response = await apiClient.post<{
+          success: boolean;
+          count: number;
+          ids: string[];
+          message: string;
+        }>('/import-csv', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } catch (directRouteError) {
+        console.log('Direct route failed, trying nested endpoint: /clients/import-csv');
+        response = await apiClient.post<{
+          success: boolean;
+          count: number;
+          ids: string[];
+          message: string;
+        }>('/clients/import-csv', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
       
       return {
         count: response.data.count,
