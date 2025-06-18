@@ -286,10 +286,7 @@ export const clientService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      // Log the attempt
-      console.log('Starting CSV import attempt');
-      
-      // Use the clients route directly - Choreo will handle the path translation
+      // We need to use different headers for multipart/form-data
       const response = await apiClient.post<{
         success: boolean;
         count: number;
@@ -299,11 +296,7 @@ export const clientService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        // Increase timeout for large files
-        timeout: 30000 // 30 seconds
       });
-      
-      console.log('CSV import successful:', response.data);
       
       return {
         count: response.data.count,
