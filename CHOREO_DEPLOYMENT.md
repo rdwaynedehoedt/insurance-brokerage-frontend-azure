@@ -2,16 +2,27 @@
 
 This document provides instructions for configuring the frontend application to work correctly with Choreo deployments.
 
-## Environment Variables Setup
+## The Problem: Path Prefixes in Choreo
 
-When deploying to Choreo or Vercel, you need to set the following environment variables to ensure the frontend communicates correctly with your Choreo API backend.
-
-### For Vercel Deployment
-
-Set these environment variables in your Vercel project settings:
+When deploying to Choreo, the API gateway adds a prefix to all your API routes. For example:
 
 ```
-# The full Choreo API endpoint including all path segments
+Local development: http://localhost:5000/api/clients
+Choreo deployment: https://xxxxx-dev.e1-us-east-azure.choreoapis.dev/insurance-brokerage/insurance-brokerage-backe/v1.0/api/clients
+```
+
+The prefix `/insurance-brokerage/insurance-brokerage-backe/v1.0` is added by Choreo.
+
+## Solution: Set the Complete Base URL
+
+The solution is to set the `NEXT_PUBLIC_API_BASE` environment variable to include this complete path prefix.
+
+### Environment Variables Setup
+
+When deploying to Vercel, set these environment variables:
+
+```
+# Replace this with your actual Choreo endpoint including the full path
 NEXT_PUBLIC_API_BASE=https://606464b5-77c7-4bb1-a1b9-9d05cefa3519-dev.e1-us-east-azure.choreoapis.dev/insurance-brokerage/insurance-brokerage-backe/v1.0/api
 
 # JWT settings
@@ -41,31 +52,56 @@ NEXT_PUBLIC_JWT_EXPIRY=7d
 NEXT_PUBLIC_ENABLE_CSV_IMPORT=true
 ```
 
-## How the CSV Import Works
+## Testing Your Choreo Deployment
 
-The CSV import feature has been made resilient to different deployment environments by:
+To verify that your API is correctly configured, visit the following endpoint in your browser:
 
-1. Trying multiple endpoint variations to account for path differences in Choreo vs local development
-2. Providing better error logging for troubleshooting
-3. Adding path normalization in the API client
-
-If you encounter any CSV import issues:
-
-1. Check the browser console logs for detailed error information
-2. Verify that the `NEXT_PUBLIC_API_BASE` environment variable is set correctly
-3. Ensure the backend is properly deployed with both the `/api/clients/import-csv` and `/api/import-csv` endpoints available
-
-## Troubleshooting Common Issues
-
-### 404 Errors on API Endpoints
-
-This typically indicates a mismatch between the frontend's base URL configuration and the actual API paths. Ensure your `NEXT_PUBLIC_API_BASE` includes the complete path to the API including any Choreo-specific path segments.
-
-Example of correct setting:
 ```
-NEXT_PUBLIC_API_BASE=https://606464b5-77c7-4bb1-a1b9-9d05cefa3519-dev.e1-us-east-azure.choreoapis.dev/insurance-brokerage/insurance-brokerage-backe/v1.0/api
+https://606464b5-77c7-4bb1-a1b9-9d05cefa3519-dev.e1-us-east-azure.choreoapis.dev/insurance-brokerage/insurance-brokerage-backe/v1.0/path-test
 ```
 
-### CORS Errors
+This will show you exactly what paths are being received by your backend service.
 
-If you see CORS errors in the console, make sure your Choreo API has CORS configured to allow requests from your frontend domain. Check the backend CORS settings in `server.ts` and ensure they're correctly deployed. 
+## CSV Import Troubleshooting
+
+If the CSV import is still failing:
+
+1. Check the browser console for detailed error logs
+2. Verify that the correct content type is being sent (`multipart/form-data`)
+3. Check that CORS is properly configured to allow your frontend domain
+4. Ensure the file size is within limits (default is 5MB)
+
+### CORS Configuration
+
+Make sure your Choreo backend has CORS configured to allow requests from your frontend domain:
+
+```javascript
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',  // Set this to your frontend domain in production
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  exposedHeaders: ['Content-Type', 'Content-Disposition'],
+  maxAge: 86400
+};
+```
+
+## Backend Logs
+
+If you're still having issues, check the backend logs in Choreo for more details. Look for:
+
+1. Any errors related to file uploads or CSV processing
+2. CORS errors
+3. Authentication errors
+4. Path resolution issues
+
+## Manual Testing
+
+You can also test the CSV import endpoint directly using a tool like Postman:
+
+1. Set the URL to: `https://606464b5-77c7-4bb1-a1b9-9d05cefa3519-dev.e1-us-east-azure.choreoapis.dev/insurance-brokerage/insurance-brokerage-backe/v1.0/api/clients/import-csv`
+2. Set the method to POST
+3. Add your JWT token in the Authorization header
+4. Set the body type to form-data
+5. Add a file field named 'file' and upload your CSV file
+6. Send the request and check the response 

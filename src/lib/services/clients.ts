@@ -286,48 +286,24 @@ export const clientService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      // First try direct path that might work in Choreo
-      console.log('CSV Import: Starting upload attempt');
+      // Log the attempt
+      console.log('Starting CSV import attempt');
       
-      // Try multiple endpoint variations to handle both local dev and Choreo environments
-      const endpoints = [
-        'import-csv',           // Direct endpoint
-        'clients/import-csv',   // Nested endpoint under clients
-        '/import-csv',          // With leading slash - direct
-        '/clients/import-csv'   // With leading slash - nested
-      ];
+      // Use the clients route directly - Choreo will handle the path translation
+      const response = await apiClient.post<{
+        success: boolean;
+        count: number;
+        ids: string[];
+        message: string;
+      }>('/clients/import-csv', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        // Increase timeout for large files
+        timeout: 30000 // 30 seconds
+      });
       
-      let response = null;
-      let lastError = null;
-      
-      // Try each endpoint until one works
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`CSV Import: Trying endpoint: ${endpoint}`);
-          response = await apiClient.post<{
-            success: boolean;
-            count: number;
-            ids: string[];
-            message: string;
-          }>(endpoint, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-          
-          console.log(`CSV Import: Success with endpoint: ${endpoint}`);
-          break; // Exit the loop if successful
-        } catch (error) {
-          console.log(`CSV Import: Failed with endpoint: ${endpoint}`, error);
-          lastError = error;
-        }
-      }
-      
-      // If all attempts failed, throw the last error
-      if (!response) {
-        console.error('CSV Import: All endpoints failed');
-        throw lastError;
-      }
+      console.log('CSV import successful:', response.data);
       
       return {
         count: response.data.count,
