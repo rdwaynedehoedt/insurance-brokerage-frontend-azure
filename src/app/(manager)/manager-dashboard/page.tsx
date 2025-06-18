@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw } from 'lucide-react';
+import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload } from 'lucide-react';
 import ClientModal from './components/ClientModal';
 import ReportGenerator from './components/ReportGenerator';
 import { clientService, Client } from '@/lib/services/clients';
@@ -299,7 +299,8 @@ export default function ManagerDashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [viewTable, setViewTable] = useState(false);
+  const [viewTable, setViewTable] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
 
   const menuItems = [
     // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
@@ -392,6 +393,43 @@ export default function ManagerDashboard() {
     } else {
       setIsReportModalOpen(true);
     }
+  };
+
+  const handleCsvImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    
+    clientService.importClientsFromCsv(file)
+      .then(data => {
+        toast.success(`Successfully imported ${data.count} clients`);
+        fetchClients(); // Refresh the client list
+      })
+      .catch(error => {
+        console.error('Error importing CSV:', error);
+        toast.error('Failed to import CSV file');
+      })
+      .finally(() => {
+        setIsUploading(false);
+        // Reset the file input
+        if (e.target) e.target.value = '';
+      });
+  };
+
+  const downloadCsvTemplate = () => {
+    const csvContent = clientService.getCsvTemplate();
+    
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'client_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -534,17 +572,40 @@ export default function ManagerDashboard() {
                   <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                     </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* CSV Template Download Button */}
+                    <button
+                      onClick={downloadCsvTemplate}
+                      className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      title="Download CSV Template"
+                    >
+                      <Download className="w-4 h-4" />
+                      CSV Template
+                    </button>
+                    
+                    {/* CSV Import Button */}
+                    <label className={`flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50' : ''}`}>
+                      <Upload className="w-4 h-4" />
+                      Import CSV
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCsvImport}
+                        disabled={isUploading}
+                        className="hidden"
+                      />
+                    </label>
+                    
                     <button
                       onClick={handleAddClient}
-                    className="flex items-center gap-1 px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800"
+                      className="flex items-center gap-1 px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800"
                     >
                     <Plus className="w-4 h-4" />
                       Add Client
                     </button>
                     <button
                       onClick={() => setViewTable(!viewTable)}
-                      className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="flex items-center gap-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
                       <Eye className="w-4 h-4" />
                       {viewTable ? 'Hide Table' : 'View Table'}

@@ -273,11 +273,86 @@ export const clientService = {
 
   async getClientsBySalesRep(salesRepId: number): Promise<Client[]> {
     try {
-      const response = await apiClient.get<ApiResponse<Client[]>>(`/clients/sales-rep/${salesRepId}`);
+      const response = await apiClient.get<ApiResponse<Client[]>>(`/clients/sales/${salesRepId}`);
       return response.data.data;
     } catch (error) {
       console.error(`Error fetching clients for sales rep ${salesRepId}:`, error);
       throw error;
     }
+  },
+
+  async importClientsFromCsv(file: File): Promise<{ count: number, ids: string[] }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // We need to use different headers for multipart/form-data
+      const response = await apiClient.post<{
+        success: boolean;
+        count: number;
+        ids: string[];
+        message: string;
+      }>('/clients/import-csv', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      return {
+        count: response.data.count,
+        ids: response.data.ids
+      };
+    } catch (error) {
+      console.error('Error importing clients from CSV:', error);
+      throw error;
+    }
+  },
+  
+  // Method to get CSV template
+  getCsvTemplate(): string {
+    const headers = [
+      // Basic Information
+      "customer_type", "product", "insurance_provider", "client_name", "introducer_code", "branch",
+      
+      // Contact Information
+      "mobile_no", "telephone", "email", "contact_person", "social_media",
+      
+      // Address
+      "street1", "street2", "city", "district", "province",
+      
+      // Policy Information
+      "policy_type", "policy_no", "policy_period_from", "policy_period_to", "coverage",
+      
+      // Financial Information
+      "sum_insured", "basic_premium", "srcc_premium", "tc_premium", "net_premium", 
+      "stamp_duty", "admin_fees", "road_safety_fee", "policy_fee", "vat_fee", "total_invoice",
+      
+      // Commission Information
+      "commission_type", "commission_basic", "commission_srcc", "commission_tc"
+    ].join(",");
+    
+    // Sample data for example
+    const example = [
+      // Basic Information
+      "Individual", "Motor Insurance", "ABC Insurance", "John Doe", "INT123", "Colombo",
+      
+      // Contact Information
+      "0777123456", "0112345678", "john@example.com", "John Doe", "@johndoe",
+      
+      // Address
+      "123 Main St", "Apt 4B", "Colombo", "Colombo", "Western",
+      
+      // Policy Information
+      "Comprehensive", "POL123456", "2023-01-01", "2024-01-01", "Full Coverage",
+      
+      // Financial Information
+      "1000000", "25000", "5000", "2500", "32500", 
+      "200", "1500", "1000", "5000", "3250", "43450",
+      
+      // Commission Information
+      "Standard", "2500", "500", "250"
+    ].join(",");
+    
+    return `${headers}\n${example}`;
   }
 }; 
