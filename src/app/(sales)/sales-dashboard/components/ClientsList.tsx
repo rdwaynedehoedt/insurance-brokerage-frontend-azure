@@ -14,10 +14,30 @@ export default function ClientsList() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importStatus, setImportStatus] = useState('');
+  const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     // Load clients when component mounts
     loadClients();
+    
+    // Set up event listener for import progress
+    const handleImportProgress = (event: Event) => {
+      const progressData = (event as CustomEvent).detail;
+      if (progressData) {
+        setImportProgress(progressData.progress || 0);
+        setImportStatus(progressData.message || '');
+        setShowProgress(true);
+      }
+    };
+    
+    window.addEventListener('clientImportProgress', handleImportProgress);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('clientImportProgress', handleImportProgress);
+    };
   }, []);
 
   const loadClients = async () => {
@@ -81,15 +101,32 @@ export default function ClientsList() {
     if (!file) return;
     
     setIsUploading(true);
+    setShowProgress(true);
+    setImportProgress(0);
+    setImportStatus('Preparing to import...');
     
     clientService.importClientsFromCsv(file)
       .then(data => {
         toast.success(`Successfully imported ${data.count} clients`);
+        setImportProgress(100);
+        setImportStatus(`Completed! Imported ${data.count} clients.`);
+        
+        // Hide progress bar after a delay
+        setTimeout(() => {
+          setShowProgress(false);
+        }, 3000);
+        
         loadClients(); // Refresh the client list
       })
       .catch(error => {
         console.error('Error importing CSV:', error);
         toast.error('Failed to import CSV file');
+        setImportStatus('Import failed');
+        
+        // Hide progress bar after a delay
+        setTimeout(() => {
+          setShowProgress(false);
+        }, 3000);
       })
       .finally(() => {
         setIsUploading(false);
@@ -124,13 +161,14 @@ export default function ClientsList() {
               onClick={downloadCsvTemplate}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               title="Download CSV Template"
+              disabled={isUploading}
             >
               <Download className="w-5 h-5 mr-2" />
               CSV Template
             </button>
             
             {/* CSV Import Button */}
-            <label className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50' : ''}`}>
+            <label className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <Upload className="w-5 h-5 mr-2" />
               Import CSV
               <input
@@ -146,12 +184,29 @@ export default function ClientsList() {
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800 transition-colors"
+              disabled={isUploading}
             >
               <Plus className="w-5 h-5 mr-2" />
               Add Client
             </button>
           </div>
         </div>
+        
+        {/* Progress Bar */}
+        {showProgress && (
+          <div className="mb-4">
+            <div className="flex justify-between mb-1">
+              <span className="text-sm font-medium text-gray-700">{importStatus}</span>
+              <span className="text-sm font-medium text-gray-700">{importProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+                style={{ width: `${importProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
         
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -206,12 +261,14 @@ export default function ClientsList() {
                           setShowEditModal(true);
                         }}
                         className="text-blue-600 hover:text-blue-900"
+                        disabled={isUploading}
                       >
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleDeleteClient(client.id!)}
                         className="text-red-600 hover:text-red-900"
+                        disabled={isUploading}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

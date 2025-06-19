@@ -286,22 +286,90 @@ export const clientService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      // We need to use different headers for multipart/form-data
-      const response = await apiClient.post<{
-        success: boolean;
-        count: number;
-        ids: string[];
-        message: string;
-      }>('/clients/import-csv', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      // Return a promise that will resolve with the final result
+      return new Promise((resolve, reject) => {
+        // Create a new XMLHttpRequest for streaming support
+        const xhr = new XMLHttpRequest();
+        
+        // Store chunks of data as they arrive
+        let receivedText = '';
+        
+        // Set up event handlers
+        xhr.onprogress = (event) => {
+          if (event.target && (event.target as XMLHttpRequest).responseText) {
+            // Get the new chunk of text
+            const newText = (event.target as XMLHttpRequest).responseText.substring(receivedText.length);
+            receivedText += newText;
+            
+            try {
+              // Try to parse the latest chunk as JSON
+              // The server might be sending multiple JSON objects in the stream
+              const latestChunk = newText.trim();
+              if (latestChunk) {
+                const progressData = JSON.parse(latestChunk);
+                
+                // Dispatch a custom event with the progress data
+                const progressEvent = new CustomEvent('clientImportProgress', { 
+                  detail: progressData 
+                });
+                window.dispatchEvent(progressEvent);
+              }
+            } catch (e) {
+              // If we can't parse the JSON, it might be an incomplete chunk
+              console.warn('Could not parse progress update chunk', e);
+            }
+          }
+        };
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              // Get the last JSON object from the response which should contain the final result
+              const responseLines = receivedText.split('}{');
+              let finalResponseText = responseLines[responseLines.length - 1];
+              
+              // Add back the brackets if they were split
+              if (responseLines.length > 1 && !finalResponseText.startsWith('{')) {
+                finalResponseText = '{' + finalResponseText;
+              }
+              if (responseLines.length > 1 && !finalResponseText.endsWith('}')) {
+                finalResponseText = finalResponseText + '}';
+              }
+              
+              const result = JSON.parse(finalResponseText);
+              resolve({
+                count: result.count || 0,
+                ids: result.ids || []
+              });
+            } catch (e) {
+              console.error('Error parsing final response', e);
+              reject(new Error('Invalid response format'));
+            }
+          } else {
+            reject(new Error(`HTTP error ${xhr.status}: ${xhr.statusText}`));
+          }
+        };
+        
+        xhr.onerror = () => {
+          reject(new Error('Network error occurred'));
+        };
+        
+        xhr.ontimeout = () => {
+          reject(new Error('Request timed out'));
+        };
+        
+        // Set up the request
+        xhr.open('POST', `${API_BASE}/clients/import-csv`, true);
+        
+        // Add authentication headers
+        const token = authService.getToken();
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        
+        // Send the request
+        xhr.send(formData);
       });
-      
-      return {
-        count: response.data.count,
-        ids: response.data.ids
-      };
     } catch (error) {
       console.error('Error importing clients from CSV:', error);
       throw error;

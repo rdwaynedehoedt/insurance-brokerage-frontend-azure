@@ -301,6 +301,9 @@ export default function ManagerDashboard() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [viewTable, setViewTable] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importStatus, setImportStatus] = useState('');
 
   const menuItems = [
     // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
@@ -311,6 +314,23 @@ export default function ManagerDashboard() {
   // Load clients on initial render to fix the "0 Total Clients" issue
   useEffect(() => {
     fetchClients();
+    
+    // Set up event listener for import progress
+    const handleImportProgress = (event: Event) => {
+      const progressData = (event as CustomEvent).detail;
+      if (progressData) {
+        setImportProgress(progressData.progress || 0);
+        setImportStatus(progressData.message || '');
+        setShowProgress(true);
+      }
+    };
+    
+    window.addEventListener('clientImportProgress', handleImportProgress);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('clientImportProgress', handleImportProgress);
+    };
   }, []);
 
   // Also load clients when changing tabs if needed
@@ -400,15 +420,32 @@ export default function ManagerDashboard() {
     if (!file) return;
     
     setIsUploading(true);
+    setShowProgress(true);
+    setImportProgress(0);
+    setImportStatus('Preparing to import...');
     
     clientService.importClientsFromCsv(file)
       .then(data => {
         toast.success(`Successfully imported ${data.count} clients`);
+        setImportProgress(100);
+        setImportStatus(`Completed! Imported ${data.count} clients.`);
+        
+        // Hide progress bar after a delay
+        setTimeout(() => {
+          setShowProgress(false);
+        }, 3000);
+        
         fetchClients(); // Refresh the client list
       })
       .catch(error => {
         console.error('Error importing CSV:', error);
         toast.error('Failed to import CSV file');
+        setImportStatus('Import failed');
+        
+        // Hide progress bar after a delay
+        setTimeout(() => {
+          setShowProgress(false);
+        }, 3000);
       })
       .finally(() => {
         setIsUploading(false);
@@ -578,13 +615,14 @@ export default function ManagerDashboard() {
                       onClick={downloadCsvTemplate}
                       className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                       title="Download CSV Template"
+                      disabled={isUploading}
                     >
                       <Download className="w-4 h-4" />
                       CSV Template
                     </button>
                     
                     {/* CSV Import Button */}
-                    <label className={`flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50' : ''}`}>
+                    <label className={`flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <Upload className="w-4 h-4" />
                       Import CSV
                       <input
@@ -599,6 +637,7 @@ export default function ManagerDashboard() {
                     <button
                       onClick={handleAddClient}
                       className="flex items-center gap-1 px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800"
+                      disabled={isUploading}
                     >
                     <Plus className="w-4 h-4" />
                       Add Client
@@ -606,11 +645,39 @@ export default function ManagerDashboard() {
                     <button
                       onClick={() => setViewTable(!viewTable)}
                       className="flex items-center gap-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                      disabled={isUploading}
                     >
                       <Eye className="w-4 h-4" />
                       {viewTable ? 'Hide Table' : 'View Table'}
                     </button>
                 </div>
+              </div>
+
+              {/* Progress Bar */}
+              {showProgress && (
+                <div className="mb-4 px-6">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">{importStatus}</span>
+                    <span className="text-sm font-medium text-gray-700">{importProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+                      style={{ width: `${importProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="relative px-6 mb-4">
+                <Search className="absolute left-10 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search clients by name or phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
               </div>
 
               {/* Clients Table - Only show when viewTable is true */}
