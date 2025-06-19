@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload } from 'lucide-react';
+import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import ClientModal from './components/ClientModal';
 import ReportGenerator from './components/ReportGenerator';
 import { clientService, Client } from '@/lib/services/clients';
@@ -304,6 +304,10 @@ export default function ManagerDashboard() {
   const [showProgress, setShowProgress] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importStatus, setImportStatus] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalImported, setTotalImported] = useState(0);
+  const [totalToImport, setTotalToImport] = useState(0);
+  const itemsPerPage = 10; // Number of clients to display per page
 
   const menuItems = [
     // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
@@ -322,6 +326,44 @@ export default function ManagerDashboard() {
         setImportProgress(progressData.progress || 0);
         setImportStatus(progressData.message || '');
         setShowProgress(true);
+        
+        // Update counts for detailed progress information
+        if (progressData.totalCount) {
+          setTotalToImport(progressData.totalCount);
+        }
+        if (progressData.processedCount !== undefined) {
+          setTotalImported(progressData.processedCount);
+        }
+        
+        // Show progress notification as toast
+        if (progressData.progress > 0 && progressData.progress < 100) {
+          toast.dismiss(); // Remove previous progress toast
+          toast.custom((t) => (
+            <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex flex-col`}>
+              <div className="px-4 py-3 border-b border-gray-200">
+                <p className="text-sm font-medium text-gray-900">
+                  {progressData.message || 'Importing clients...'}
+                </p>
+              </div>
+              <div className="px-4 py-2">
+                <div className="flex justify-between mb-1">
+                  <span className="text-xs text-gray-500">
+                    {progressData.processedCount || 0} of {progressData.totalCount || 0} records
+                  </span>
+                  <span className="text-xs font-medium text-gray-700">
+                    {progressData.progress}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                  <div 
+                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300 ease-in-out" 
+                    style={{ width: `${progressData.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ), { duration: 2000 });
+        }
       }
     };
     
@@ -332,6 +374,11 @@ export default function ManagerDashboard() {
       window.removeEventListener('clientImportProgress', handleImportProgress);
     };
   }, []);
+
+  // Reset to first page when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Also load clients when changing tabs if needed
   useEffect(() => {
@@ -405,6 +452,18 @@ export default function ManagerDashboard() {
     (client.mobile_no && client.mobile_no.includes(searchTerm))
   );
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const paginatedClients = filteredClients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const handleOpenReportModal = () => {
     if (clients.length === 0) {
       fetchClients().then(() => {
@@ -423,10 +482,23 @@ export default function ManagerDashboard() {
     setShowProgress(true);
     setImportProgress(0);
     setImportStatus('Preparing to import...');
+    setTotalImported(0);
+    setTotalToImport(0);
+    
+    // Show initial toast notification
+    toast.loading('Starting import...', { duration: 2000 });
     
     clientService.importClientsFromCsv(file)
       .then(async (data) => {
-        toast.success(`Successfully imported ${data.count} clients`);
+        // Show completion toast with detailed information
+        toast.success(
+          <div>
+            <p className="font-medium">Import completed!</p>
+            <p className="text-sm">Successfully imported {data.count} clients</p>
+          </div>, 
+          { duration: 5000 }
+        );
+        
         setImportProgress(100);
         setImportStatus(`Completed! Imported ${data.count} clients.`);
         
@@ -440,7 +512,13 @@ export default function ManagerDashboard() {
       })
       .catch(error => {
         console.error('Error importing CSV:', error);
-        toast.error('Failed to import CSV file');
+        toast.error(
+          <div>
+            <p className="font-medium">Import failed</p>
+            <p className="text-sm">{error.message || 'Failed to import CSV file'}</p>
+          </div>,
+          { duration: 5000 }
+        );
         setImportStatus('Import failed');
         
         // Hide progress bar after a delay
@@ -659,7 +737,9 @@ export default function ManagerDashboard() {
                 <div className="mb-4 px-6">
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-medium text-gray-700">{importStatus}</span>
-                    <span className="text-sm font-medium text-gray-700">{importProgress}%</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {totalImported} of {totalToImport} records ({importProgress}%)
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
@@ -667,6 +747,16 @@ export default function ManagerDashboard() {
                       style={{ width: `${importProgress}%` }}
                     ></div>
                   </div>
+                  {importProgress < 100 && importProgress > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Please wait while clients are being imported. The table will automatically refresh when complete.
+                    </p>
+                  )}
+                  {importProgress === 100 && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Import completed successfully! {totalImported} clients have been added to the database.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -705,7 +795,7 @@ export default function ManagerDashboard() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredClients.map((client) => (
+                          {paginatedClients.map((client) => (
                             <tr key={client.id}>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">{client.client_name}</div>
@@ -750,6 +840,103 @@ export default function ManagerDashboard() {
                       </table>
                     )}
                   </div>
+                  
+                  {/* Pagination Controls */}
+                  {filteredClients.length > 0 && (
+                    <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
+                      <div className="flex-1 flex justify-between sm:hidden">
+                        <button
+                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                            currentPage === 1
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                            currentPage === totalPages
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">
+                            Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredClients.length)}</span> to{' '}
+                            <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredClients.length)}</span> of{' '}
+                            <span className="font-medium">{filteredClients.length}</span> clients
+                          </p>
+                        </div>
+                        <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button
+                              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                              disabled={currentPage === 1}
+                              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                                currentPage === 1
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="sr-only">Previous</span>
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            
+                            {/* Page Numbers */}
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                              // Calculate which page numbers to show
+                              let pageNum;
+                              if (totalPages <= 5) {
+                                pageNum = i + 1;
+                              } else if (currentPage <= 3) {
+                                pageNum = i + 1;
+                              } else if (currentPage >= totalPages - 2) {
+                                pageNum = totalPages - 4 + i;
+                              } else {
+                                pageNum = currentPage - 2 + i;
+                              }
+                              
+                              return (
+                                <button
+                                  key={pageNum}
+                                  onClick={() => handlePageChange(pageNum)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    currentPage === pageNum
+                                      ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              );
+                            })}
+                            
+                            <button
+                              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                              disabled={currentPage === totalPages}
+                              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                                currentPage === totalPages
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="sr-only">Next</span>
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
