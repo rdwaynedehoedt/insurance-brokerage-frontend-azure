@@ -61,12 +61,15 @@ export default function ClientsList() {
 
   const handleAddClient = async (newClient: Client) => {
     try {
+      setIsLoading(true);
       await clientService.createClient(newClient);
       toast.success('Client added successfully');
-      loadClients(); // Refresh the client list
+      await loadClients(); // Refresh the client list
     } catch (error) {
       console.error('Error adding client:', error);
       toast.error('Failed to add client');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,12 +77,15 @@ export default function ClientsList() {
     if (!updatedClient.id) return;
     
     try {
+      setIsLoading(true);
       await clientService.updateClient(updatedClient.id, updatedClient);
       toast.success('Client updated successfully');
-      loadClients(); // Refresh the client list
+      await loadClients(); // Refresh the client list
     } catch (error) {
       console.error('Error updating client:', error);
       toast.error('Failed to update client');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,12 +93,15 @@ export default function ClientsList() {
     if (!window.confirm('Are you sure you want to delete this client?')) return;
     
     try {
+      setIsLoading(true);
       await clientService.deleteClient(clientId);
       toast.success('Client deleted successfully');
-      loadClients(); // Refresh the client list
+      await loadClients(); // Ensure we reload the client list after deletion
     } catch (error) {
       console.error('Error deleting client:', error);
       toast.error('Failed to delete client');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,17 +115,18 @@ export default function ClientsList() {
     setImportStatus('Preparing to import...');
     
     clientService.importClientsFromCsv(file)
-      .then(data => {
+      .then(async (data) => {
         toast.success(`Successfully imported ${data.count} clients`);
         setImportProgress(100);
         setImportStatus(`Completed! Imported ${data.count} clients.`);
+        
+        // Refresh the client list
+        await loadClients();
         
         // Hide progress bar after a delay
         setTimeout(() => {
           setShowProgress(false);
         }, 3000);
-        
-        loadClients(); // Refresh the client list
       })
       .catch(error => {
         console.error('Error importing CSV:', error);

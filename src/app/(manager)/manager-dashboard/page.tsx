@@ -369,8 +369,8 @@ export default function ManagerDashboard() {
     setIsClientModalOpen(true);
   };
 
-  const handleClientSaved = () => {
-    fetchClients();
+  const handleClientSaved = async () => {
+    await fetchClients();
   };
 
   const handleViewClientDetails = (client: Client) => {
@@ -391,7 +391,7 @@ export default function ManagerDashboard() {
       await clientService.deleteClient(clientToDelete.id);
       toast.success(`${clientToDelete.client_name} deleted successfully`);
       setIsDeleteModalOpen(false);
-      fetchClients();
+      await fetchClients(); // Ensure we reload the client list after deletion
     } catch (error) {
       console.error('Error deleting client:', error);
       toast.error('Failed to delete client');
@@ -425,17 +425,18 @@ export default function ManagerDashboard() {
     setImportStatus('Preparing to import...');
     
     clientService.importClientsFromCsv(file)
-      .then(data => {
+      .then(async (data) => {
         toast.success(`Successfully imported ${data.count} clients`);
         setImportProgress(100);
         setImportStatus(`Completed! Imported ${data.count} clients.`);
+        
+        // Refresh the client list
+        await fetchClients();
         
         // Hide progress bar after a delay
         setTimeout(() => {
           setShowProgress(false);
         }, 3000);
-        
-        fetchClients(); // Refresh the client list
       })
       .catch(error => {
         console.error('Error importing CSV:', error);
