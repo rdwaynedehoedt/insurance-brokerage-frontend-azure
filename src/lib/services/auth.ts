@@ -23,7 +23,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'manager' | 'underwriter' | 'sales';
+  role: 'admin' | 'manager';
 }
 
 export interface AuthResponse {
@@ -271,8 +271,6 @@ class AuthService {
     switch (role) {
       case 'admin': return '/admin/dashboard';
       case 'manager': return '/manager-dashboard';
-      case 'underwriter': return '/underwriter-dashboard';
-      case 'sales': return '/sales-dashboard';
       default: return '/';
     }
   }

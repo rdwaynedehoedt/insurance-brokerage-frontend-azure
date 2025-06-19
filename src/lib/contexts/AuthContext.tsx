@@ -18,9 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Map roles to their dashboard paths
 const roleDashboardMap = {
   'admin': '/admin/dashboard',
-  'manager': '/manager-dashboard',
-  'underwriter': '/underwriter-dashboard',
-  'sales': '/sales-dashboard'
+  'manager': '/manager-dashboard'
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {

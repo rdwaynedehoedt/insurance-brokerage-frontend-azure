@@ -11,9 +11,7 @@ interface JWTPayload {
 // Map roles to their dashboard paths
 const roleDashboardMap = {
   'admin': '/admin/dashboard',
-  'manager': '/manager-dashboard',
-  'underwriter': '/underwriter-dashboard',
-  'sales': '/sales-dashboard'
+  'manager': '/manager-dashboard'
 };
 
 export function middleware(request: NextRequest) {
@@ -72,9 +70,7 @@ export function middleware(request: NextRequest) {
     // Role-based route protection
     const roleBasedPaths = {
       '/admin': 'admin',
-      '/manager-dashboard': 'manager',
-      '/underwriter-dashboard': 'underwriter',
-      '/sales-dashboard': 'sales',
+      '/manager-dashboard': 'manager'
     };
 
     for (const [pathPrefix, requiredRole] of Object.entries(roleBasedPaths)) {
@@ -102,8 +98,6 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/manager-dashboard/:path*',
-    '/underwriter-dashboard/:path*',
-    '/sales-dashboard/:path*',
     '/login',
     '/'
   ],

@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/contexts/AuthContext';
 import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import ClientModal from './components/ClientModal';
 import ReportGenerator from './components/ReportGenerator';
-import { clientService, Client } from '@/lib/services/clients';
+import { clientService, Client, PaginatedClientsResponse } from '@/lib/services/clients';
 import { Toaster, toast } from 'react-hot-toast';
 import DocumentViewer from '@/components/DocumentViewer';
 import LoadingOverlay from '@/components/LoadingOverlay';
@@ -289,11 +289,12 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
 export default function ManagerDashboard() {
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('clients');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [totalClientCount, setTotalClientCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [clientToView, setClientToView] = useState<Client | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -307,7 +308,7 @@ export default function ManagerDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalImported, setTotalImported] = useState(0);
   const [totalToImport, setTotalToImport] = useState(0);
-  const itemsPerPage = 10; // Number of clients to display per page
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Default 10 items per page
 
   const menuItems = [
     // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
@@ -387,14 +388,38 @@ export default function ManagerDashboard() {
     }
   }, [activeTab]);
 
+  // Fetch clients with pagination
+  useEffect(() => {
+    fetchClientsPage();
+  }, [currentPage, itemsPerPage, searchTerm]);
   
   const fetchClients = async () => {
     setIsLoading(true);
     try {
-      const data = await clientService.getAllClients();
-      setClients(data);
+      // Fetch all clients
+      const response = await clientService.getAllClients();
+      setClients(response.clients);
+      setTotalClientCount(response.totalCount);
     } catch (error) {
       console.error('Error fetching clients:', error);
+      toast.error('Failed to load clients');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const fetchClientsPage = async () => {
+    setIsLoading(true);
+    try {
+      // Calculate offset for the API
+      const offset = (currentPage - 1) * itemsPerPage;
+      
+      // Fetch just the current page of clients from the server
+      const response = await clientService.getAllClients(itemsPerPage, offset, searchTerm);
+      setClients(response.clients);
+      setTotalClientCount(response.totalCount);
+    } catch (error) {
+      console.error('Error fetching clients page:', error);
       toast.error('Failed to load clients');
     } finally {
       setIsLoading(false);
@@ -447,23 +472,22 @@ export default function ManagerDashboard() {
     }
   };
 
-  const filteredClients = clients.filter(client => 
-    client.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.mobile_no && client.mobile_no.includes(searchTerm))
-  );
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
-  const paginatedClients = filteredClients.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
+  // For pagination, calculate total pages
+  const totalPages = Math.ceil(totalClientCount / itemsPerPage);
+    
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    // fetchClientsPage will be triggered by useEffect
   };
-
+  
+  // Handle items per page change
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newItemsPerPage = parseInt(e.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+  
   const handleOpenReportModal = () => {
     if (clients.length === 0) {
       fetchClients().then(() => {
@@ -768,7 +792,7 @@ export default function ManagerDashboard() {
                       <div className="p-8 text-center">
                         <p>Loading clients...</p>
                       </div>
-                    ) : filteredClients.length === 0 ? (
+                    ) : clients.length === 0 ? (
                       <div className="p-8 text-center">
                         <p>No clients found.</p>
                       </div>
@@ -784,7 +808,7 @@ export default function ManagerDashboard() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {paginatedClients.map((client) => (
+                          {clients.map((client) => (
                             <tr key={client.id}>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">{client.client_name}</div>
@@ -831,41 +855,37 @@ export default function ManagerDashboard() {
                   </div>
                   
                   {/* Pagination Controls */}
-                  {filteredClients.length > 0 && (
+                  {clients.length > 0 && (
                     <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
-                      <div className="flex-1 flex justify-between sm:hidden">
-                        <button
-                          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                            currentPage === 1
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                          className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                            currentPage === totalPages
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          Next
-                        </button>
-                      </div>
-                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm text-gray-700">
-                            Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredClients.length)}</span> to{' '}
-                            <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredClients.length)}</span> of{' '}
-                            <span className="font-medium">{filteredClients.length}</span> clients
-                          </p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm text-gray-700">
+                          Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalClientCount)}</span> to{' '}
+                          <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalClientCount)}</span> of{' '}
+                          <span className="font-medium">{totalClientCount}</span> clients
+                        </p>
+                        
+                        <div className="flex items-center space-x-1">
+                          <label htmlFor="itemsPerPage" className="text-sm text-gray-600">
+                            Show
+                          </label>
+                          <select
+                            id="itemsPerPage"
+                            value={itemsPerPage}
+                            onChange={handleItemsPerPageChange}
+                            className="text-sm border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                          >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                          </select>
+                          <span className="text-sm text-gray-600">per page</span>
                         </div>
-                        <div>
+                      </div>
+                      
+                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-end">
                           <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                             <button
                               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
@@ -922,7 +942,6 @@ export default function ManagerDashboard() {
                               <ChevronRight className="h-5 w-5" />
                             </button>
                           </nav>
-                        </div>
                       </div>
                     </div>
                   )}

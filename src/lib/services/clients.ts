@@ -68,6 +68,12 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+// Added interface for paginated client response
+export interface PaginatedClientsResponse {
+  clients: Client[];
+  totalCount: number;
+}
+
 const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: API_TIMEOUT,
@@ -98,10 +104,31 @@ apiClient.interceptors.request.use(
 );
 
 export const clientService = {
-  async getAllClients(): Promise<Client[]> {
+  async getAllClients(limit?: number, offset?: number, search?: string): Promise<PaginatedClientsResponse> {
     try {
-      const response = await apiClient.get<ApiResponse<Client[]>>('/clients');
-      return response.data.data;
+      let url = '/clients';
+      const params: Record<string, string> = {};
+      
+      if (limit !== undefined) {
+        params.limit = limit.toString();
+      }
+      
+      if (offset !== undefined) {
+        params.offset = offset.toString();
+      }
+      
+      if (search && search.trim() !== '') {
+        params.search = search.trim();
+      }
+      
+      const response = await apiClient.get<ApiResponse<Client[]>>(url, { params });
+      
+      // For backward compatibility, if the backend doesn't provide total count yet
+      // We'll just use the length of the returned array
+      return {
+        clients: response.data.data,
+        totalCount: (response.data as any).totalCount || response.data.data.length
+      };
     } catch (error) {
       console.error('Error fetching clients:', error);
       throw error;
