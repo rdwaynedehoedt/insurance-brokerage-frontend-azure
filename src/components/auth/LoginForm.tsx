@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Shield, Mail, Lock, Eye, EyeOff, WifiOff, Clock } from 'lucide-react';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -16,10 +16,13 @@ export default function LoginForm() {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingDuration, setLoadingDuration] = useState(0);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginStartTime, setLoginStartTime] = useState<number | null>(null);
+  const [showSlowConnectionMessage, setShowSlowConnectionMessage] = useState(false);
 
   useEffect(() => {
     // Security check for credentials in URL
@@ -41,6 +44,29 @@ export default function LoginForm() {
       router.replace('/login');
     }
   }, [searchParams, router]);
+
+  // Effect to show slow connection message after 10 seconds of loading
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isLoading && loginStartTime) {
+      interval = setInterval(() => {
+        const duration = Math.floor((Date.now() - loginStartTime) / 1000);
+        setLoadingDuration(duration);
+        
+        if (duration >= 10 && !showSlowConnectionMessage) {
+          setShowSlowConnectionMessage(true);
+        }
+      }, 1000);
+    } else {
+      setLoadingDuration(0);
+      setShowSlowConnectionMessage(false);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading, loginStartTime, showSlowConnectionMessage]);
 
   const validateForm = () => {
     let isValid = true;
@@ -77,6 +103,8 @@ export default function LoginForm() {
     }
     
     setIsLoading(true);
+    setLoginStartTime(Date.now());
+    setShowSlowConnectionMessage(false);
 
     try {
       await login({
@@ -89,6 +117,8 @@ export default function LoginForm() {
           setError('Invalid email or password');
         } else if (error.message.includes('403') || error.message.includes('active')) {
           setError('Your account is not active. Please contact administrator.');
+        } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
+          setError('The login request timed out. The server might be experiencing high load. Please try again.');
         } else if (error.message.includes('No response') || error.message.includes('network') || error.message.includes('connect')) {
           setError('Cannot connect to server. Please check your connection or contact support.');
         } else {
@@ -99,6 +129,7 @@ export default function LoginForm() {
       }
     } finally {
       setIsLoading(false);
+      setLoginStartTime(null);
     }
   };
 
@@ -210,6 +241,16 @@ export default function LoginForm() {
             <span>{error}</span>
           </div>
         )}
+
+        {showSlowConnectionMessage && (
+          <div className="text-amber-700 text-sm bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start">
+            <Clock className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <span>
+              Login is taking longer than expected ({loadingDuration}s). This might be due to slow network 
+              conditions or high server load. Please wait while we complete your request...
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-6">
@@ -220,14 +261,28 @@ export default function LoginForm() {
         >
           {isLoading ? (
             <>
-              <span className="sr-only">Loading...</span>
-              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="sr-only">Signing in...</span>
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              <span>{loadingDuration > 0 ? `Signing in (${loadingDuration}s)` : 'Signing in...'}</span>
             </>
           ) : (
             'Sign in'
           )}
         </button>
       </div>
+
+      {isLoading && loadingDuration > 30 && (
+        <div className="text-center mt-4">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="text-sm text-orange-600 hover:text-orange-800 flex items-center justify-center mx-auto"
+          >
+            <WifiOff className="h-4 w-4 mr-1" />
+            Taking too long? Click to refresh
+          </button>
+        </div>
+      )}
     </form>
   );
 } 
