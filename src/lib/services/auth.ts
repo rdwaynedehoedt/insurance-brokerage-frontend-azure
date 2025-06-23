@@ -11,7 +11,7 @@ const TOKEN_COOKIE_NAME = 'token';
 const USER_STORAGE_KEY = 'user_data';
 const TOKEN_EXPIRY_DAYS = 7;
 const CSRF_TOKEN_HEADER = 'X-CSRF-Token';
-const API_TIMEOUT = 8000; // 8 seconds timeout for API requests
+const API_TIMEOUT = 60000; // 8 seconds timeout for API requests
 
 export interface LoginCredentials {
   email: string;
