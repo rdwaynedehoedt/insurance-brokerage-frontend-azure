@@ -2,8 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import authService from '../services/auth';
-import type { User, LoginCredentials } from '../services/auth';
+import { authService, User, LoginCredentials } from '../services/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -40,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timeoutPromise = new Promise<{timedOut: boolean}>((resolve) => {
       setTimeout(() => {
         resolve({ timedOut: true });
-      }, 15000); // Increased to 15 seconds timeout
+      }, 10000); // 10 seconds timeout
     });
     
     try {
@@ -80,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials, rememberMe = false) => {
     try {
-      setIsLoading(true);
       const { user } = await authService.login(credentials, rememberMe);
       setUser(user);
       setIsAuthenticated(true);
@@ -90,8 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       setIsAuthenticated(false);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 

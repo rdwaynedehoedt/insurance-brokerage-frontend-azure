@@ -11,7 +11,7 @@ const TOKEN_COOKIE_NAME = 'token';
 const USER_STORAGE_KEY = 'user_data';
 const TOKEN_EXPIRY_DAYS = 7;
 const CSRF_TOKEN_HEADER = 'X-CSRF-Token';
-const API_TIMEOUT = 60000; // Increased to 60 seconds (60000ms) for login requests
+const API_TIMEOUT = 60000; 
 
 export interface LoginCredentials {
   email: string;
@@ -39,8 +39,6 @@ interface JWTPayload {
 
 class AuthService {
   private csrfToken: string | null = null;
-  private loginAttempts: number = 0;
-  private maxLoginAttempts: number = 3;
 
   constructor() {
     this.setupAxiosInterceptors();
@@ -127,58 +125,23 @@ class AuthService {
         }
       }
 
-      // Create an AbortController for this request
-      const controller = new AbortController();
+      const response = await axios.post<AuthResponse>(
+        `${API_BASE}/auth/login`, 
+        credentials,
+        { timeout: API_TIMEOUT }
+      );
       
-      // Set up timeout handling
-      const timeoutId = setTimeout(() => {
-        controller.abort('Request timeout: The server is taking too long to respond');
-      }, API_TIMEOUT + 5000); // Add 5 seconds buffer beyond the axios timeout
-
-      try {
-        const requestConfig = {
-          timeout: API_TIMEOUT,
-          signal: controller.signal,
-          validateStatus: (status: number) => {
-            // Consider only 2xx status codes as successful
-            return status >= 200 && status < 300;
-          }
-        };
-
-        const response = await axios.post<AuthResponse>(
-          `${API_BASE}/auth/login`, 
-          credentials,
-          requestConfig
-        );
-        
-        // Clear the timeout since the request completed
-        clearTimeout(timeoutId);
-        
-        // Reset login attempts on successful login
-        this.loginAttempts = 0;
-        
-        const { token, user } = response.data;
-        
-        this.setAuthToken(token, rememberMe);
-        
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-        }
-        
-        return response.data;
-      } catch (axiosError: any) {
-        // Clear the timeout to prevent memory leaks
-        clearTimeout(timeoutId);
-        throw axiosError;
+      const { token, user } = response.data;
+      
+      this.setAuthToken(token, rememberMe);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
       }
-    } catch (error: any) {
-      // Increment login attempts
-      this.loginAttempts++;
       
-      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        // Request was aborted (likely due to timeout)
-        throw new Error('Login request timed out. The server might be experiencing high load or connectivity issues. Please try again later.');
-      } else if (error.response) {
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         const status = error.response.status;
@@ -193,14 +156,10 @@ class AuthService {
         }
       } else if (error.request) {
         // The request was made but no response was received
-        const errorMessage = this.loginAttempts >= this.maxLoginAttempts
-          ? 'Multiple connection failures. Please check your network connection or contact support.'
-          : 'No response from server. This could be due to network issues or server unavailability. Please try again.';
-        
-        throw new Error(errorMessage);
+        throw new Error('No response from server. Please check your connection and try again.');
       } else {
         // Something happened in setting up the request that triggered an Error
-        throw new Error(`Login failed: ${error.message || 'Please try again later.'}`);
+        throw new Error('Login failed. Please try again later.');
       }
     }
   }
@@ -216,13 +175,9 @@ class AuthService {
         axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
       }
       
-      const requestConfig = {
-        timeout: API_TIMEOUT
-      };
-      
       const response = await axios.get<User>(
         `${API_BASE}/auth/me`,
-        requestConfig
+        { timeout: API_TIMEOUT }
       );
       
       const user = response.data;
@@ -237,11 +192,6 @@ class AuthService {
       if (error.response && error.response.status === 401) {
         this.clearAuthToken();
       }
-      
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        throw new Error('Request timed out. The server might be experiencing high load or connectivity issues.');
-      }
-      
       throw new Error('Failed to fetch user data');
     }
   }
@@ -299,34 +249,31 @@ class AuthService {
   getStoredUser(): User | null {
     if (typeof window === 'undefined') return null;
     
+    const userStr = localStorage.getItem(USER_STORAGE_KEY);
+    return userStr ? JSON.parse(userStr) : null;
+  }
+
+  getUserRole(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    
     try {
-      const userJson = localStorage.getItem(USER_STORAGE_KEY);
-      if (!userJson) return null;
-      
-      return JSON.parse(userJson) as User;
-    } catch (error) {
+      const decoded = jwtDecode<JWTPayload>(token);
+      return decoded.role;
+    } catch {
       return null;
     }
   }
 
-  getUserRole(): string | null {
-    const user = this.getStoredUser();
-    return user ? user.role : null;
-  }
-
+  // Get dashboard path for the current user's role
   getDashboardPath(): string {
     const role = this.getUserRole();
-    
     switch (role) {
-      case 'admin':
-        return '/admin/dashboard';
-      case 'manager':
-        return '/manager-dashboard';
-      default:
-        return '/login';
+      case 'admin': return '/admin/dashboard';
+      case 'manager': return '/manager-dashboard';
+      default: return '/';
     }
   }
 }
 
-const authService = new AuthService();
-export default authService; 
+export const authService = new AuthService(); 

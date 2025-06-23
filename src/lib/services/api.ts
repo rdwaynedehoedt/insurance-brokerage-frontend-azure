@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
-const API_TIMEOUT = 60000; // Increased to 60 seconds to handle potential API Gateway delays
+const API_TIMEOUT = 8000; // 8 seconds timeout
 const TOKEN_COOKIE_NAME = 'token';
 
 console.log('API Client initialized with baseURL:', baseURL);
@@ -55,12 +55,6 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Check if the error is a timeout
-    if (error.code === 'ECONNABORTED' && error.message && error.message.includes('timeout')) {
-      console.error('Request timed out:', error.config.url);
-      return Promise.reject(new Error('The request took too long to complete. Please try again later.'));
-    }
-    
     // Log detailed error information
     if (error.response) {
       // Server responded with a status code outside of 2xx range
