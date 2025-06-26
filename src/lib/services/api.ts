@@ -1,56 +1,11 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-// Extract the API base URL with better handling for Choreo deployment
-const getApiBaseUrl = () => {
-  const configuredBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
-  
-  // For Choreo deployment, ensure the URL has the correct format
-  if (configuredBase.includes('choreoapis.dev') && !configuredBase.endsWith('/api')) {
-    // Add /api if it's missing for Choreo deployments
-    return `${configuredBase}/api`;
-  }
-  
-  return configuredBase;
-};
-
-const baseURL = getApiBaseUrl();
-const API_TIMEOUT = 15000; // 15 seconds timeout
+const baseURL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+const API_TIMEOUT = 8000; // 8 seconds timeout
 const TOKEN_COOKIE_NAME = 'token';
 
 console.log('API Client initialized with baseURL:', baseURL);
-
-// Helper function to ensure API endpoint has correct format
-export const formatApiUrl = (endpoint: string): string => {
-  // If baseURL already has /api
-  if (baseURL.endsWith('/api')) {
-    return `${baseURL}/${endpoint.replace(/^\//, '')}`;
-  }
-  
-  // If endpoint already has /api
-  if (endpoint.startsWith('/api/')) {
-    return `${baseURL}${endpoint}`;
-  }
-  
-  // If neither has /api
-  if (!endpoint.startsWith('/')) {
-    return `${baseURL}/api/${endpoint}`;
-  }
-  
-  return `${baseURL}/api${endpoint}`;
-};
-
-// Debug function to log API configuration
-export const debugApiConfig = () => {
-  return {
-    baseURL,
-    formattedTestUrl: formatApiUrl('/auth/me'),
-    configuredBase: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api',
-    isProduction: process.env.NODE_ENV === 'production',
-    isBrowser: typeof window !== 'undefined',
-    hasToken: !!Cookies.get(TOKEN_COOKIE_NAME) || (typeof window !== 'undefined' && !!localStorage.getItem(TOKEN_COOKIE_NAME))
-  };
-};
 
 const apiClient = axios.create({
   baseURL,
@@ -112,14 +67,13 @@ apiClient.interceptors.response.use(
       if (error.response.status === 401 || error.response.status === 403) {
         console.error('Authentication error:', error.response.data);
         
-        // Clear token if unauthorized
-        Cookies.remove(TOKEN_COOKIE_NAME);
-        localStorage.removeItem(TOKEN_COOKIE_NAME);
-        
-        // Only redirect in browser environment and not already on login page
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          console.log('Redirecting to login due to auth error');
-          window.location.href = '/login';
+        // You can dispatch an action to clear auth state here if using a state management solution
+        // Or redirect to login
+        if (typeof window !== 'undefined') {
+          // Only redirect in browser environment
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       }
     } else if (error.request) {
@@ -134,4 +88,4 @@ apiClient.interceptors.response.use(
   }
 );
 
-export default apiClient; 
+export { apiClient }; 

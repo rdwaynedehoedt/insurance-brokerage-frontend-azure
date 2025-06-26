@@ -43,11 +43,9 @@ export default function DocumentViewer({ clientId, documents }: DocumentViewerPr
       
       // Get the filename
       const fileName = getFileName(document.url);
-      console.log(`Opening document: ${fileName} from URL: ${document.url}`);
       
       // Get cached URL if available
       if (documentUrls[document.url]) {
-        console.log(`Using cached URL for ${fileName}`);
         window.open(documentUrls[document.url], '_blank');
         setLoadingDoc(null);
         return;
@@ -65,28 +63,22 @@ export default function DocumentViewer({ clientId, documents }: DocumentViewerPr
           const urlClientId = urlParts[urlParts.length - 3]; 
           const urlDocType = urlParts[urlParts.length - 2];
           
-          console.log(`Extracted path info: clientId=${urlClientId}, docType=${urlDocType}, fileName=${fileName}`);
-          
           // Get URL using extracted values
           urlToUse = await documentService.getSecureDocumentUrl(
             urlClientId, urlDocType, fileName
           );
         } else {
           // Fallback
-          console.log(`Using fallback with provided clientId=${clientId}, type=${document.type}`);
           urlToUse = await documentService.getSecureDocumentUrl(
             clientId, document.type, fileName
           );
         }
       } else {
         // Regular URL
-        console.log(`Using regular path with clientId=${clientId}, type=${document.type}`);
         urlToUse = await documentService.getSecureDocumentUrl(
           clientId, document.type, fileName
         );
       }
-      
-      console.log(`Generated URL for document: ${urlToUse}`);
       
       // Cache the URL
       setDocumentUrls(prev => ({
@@ -96,14 +88,8 @@ export default function DocumentViewer({ clientId, documents }: DocumentViewerPr
       
       // Open in new tab
       window.open(urlToUse, '_blank');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error opening document:', error);
-      console.error('Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        url: document.url
-      });
       alert('Failed to generate document URL. Please try again.');
     } finally {
       setLoadingDoc(null);
