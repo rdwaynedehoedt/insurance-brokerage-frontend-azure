@@ -11,7 +11,7 @@ const TOKEN_COOKIE_NAME = 'token';
 const USER_STORAGE_KEY = 'user_data';
 const TOKEN_EXPIRY_DAYS = 7;
 const CSRF_TOKEN_HEADER = 'X-CSRF-Token';
-const API_TIMEOUT = 60000; // 8 seconds timeout for API requests
+const API_TIMEOUT = 60000; 
 
 export interface LoginCredentials {
   email: string;
@@ -125,8 +125,18 @@ class AuthService {
         }
       }
 
+      // Log the API endpoint for debugging
+      console.log(`[Auth] Attempting login to: ${API_BASE}/auth/login`);
+      
+      // Check if API_BASE already includes /api
+      const loginEndpoint = API_BASE.endsWith('/api') 
+        ? `${API_BASE}/auth/login`
+        : `${API_BASE}/api/auth/login`;
+      
+      console.log(`[Auth] Final login endpoint: ${loginEndpoint}`);
+
       const response = await axios.post<AuthResponse>(
-        `${API_BASE}/auth/login`, 
+        loginEndpoint, 
         credentials,
         { timeout: API_TIMEOUT }
       );
@@ -175,8 +185,15 @@ class AuthService {
         axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
       }
       
+      // Check if API_BASE already includes /api
+      const meEndpoint = API_BASE.endsWith('/api') 
+        ? `${API_BASE}/auth/me`
+        : `${API_BASE}/api/auth/me`;
+      
+      console.log(`[Auth] Fetching current user from: ${meEndpoint}`);
+      
       const response = await axios.get<User>(
-        `${API_BASE}/auth/me`,
+        meEndpoint,
         { timeout: API_TIMEOUT }
       );
       
@@ -200,7 +217,14 @@ class AuthService {
     // Perform a server-side logout if your API supports it
     try {
       if (this.isAuthenticated()) {
-        axios.post(`${API_BASE}/auth/logout`, {})
+        // Check if API_BASE already includes /api
+        const logoutEndpoint = API_BASE.endsWith('/api') 
+          ? `${API_BASE}/auth/logout`
+          : `${API_BASE}/api/auth/logout`;
+        
+        console.log(`[Auth] Logging out via: ${logoutEndpoint}`);
+        
+        axios.post(logoutEndpoint, {})
           .catch(() => {}); // Silently catch errors on logout
       }
     } finally {

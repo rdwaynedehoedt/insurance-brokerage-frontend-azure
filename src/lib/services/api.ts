@@ -1,11 +1,35 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+// Extract the API base URL with better handling for Choreo deployment
+const getApiBaseUrl = () => {
+  const configuredBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
+  
+  // For Choreo deployment, ensure the URL has the correct format
+  if (configuredBase.includes('choreoapis.dev') && !configuredBase.endsWith('/api')) {
+    // Add /api if it's missing for Choreo deployments
+    return `${configuredBase}/api`;
+  }
+  
+  return configuredBase;
+};
+
+const baseURL = getApiBaseUrl();
 const API_TIMEOUT = 8000; // 8 seconds timeout
 const TOKEN_COOKIE_NAME = 'token';
 
 console.log('API Client initialized with baseURL:', baseURL);
+
+// Debug function to log API configuration
+export const debugApiConfig = () => {
+  return {
+    baseURL,
+    configuredBase: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api',
+    isProduction: process.env.NODE_ENV === 'production',
+    isBrowser: typeof window !== 'undefined',
+    hasToken: !!Cookies.get(TOKEN_COOKIE_NAME) || (typeof window !== 'undefined' && !!localStorage.getItem(TOKEN_COOKIE_NAME))
+  };
+};
 
 const apiClient = axios.create({
   baseURL,

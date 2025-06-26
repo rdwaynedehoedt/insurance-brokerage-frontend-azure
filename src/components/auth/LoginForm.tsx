@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Shield, Mail, Lock, Eye, EyeOff, Bug } from 'lucide-react';
+import { debugApiConfig } from '@/lib/services/api';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -20,6 +21,8 @@ export default function LoginForm() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [apiConfig, setApiConfig] = useState<any>(null);
 
   useEffect(() => {
     // Security check for credentials in URL
@@ -40,6 +43,9 @@ export default function LoginForm() {
       // Remove credentials from URL by redirecting to a clean one
       router.replace('/login');
     }
+
+    // Get API configuration for debugging
+    setApiConfig(debugApiConfig());
   }, [searchParams, router]);
 
   const validateForm = () => {
@@ -79,6 +85,9 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
+      // Update API config before login attempt
+      setApiConfig(debugApiConfig());
+      
       await login({
         email: formData.email,
         password: formData.password,
@@ -91,6 +100,10 @@ export default function LoginForm() {
           setError('Your account is not active. Please contact administrator.');
         } else if (error.message.includes('No response') || error.message.includes('network') || error.message.includes('connect')) {
           setError('Cannot connect to server. Please check your connection or contact support.');
+        } else if (error.message.includes('404') || error.message.includes('not found')) {
+          setError('API endpoint not found. This may be due to incorrect API configuration.');
+          // Show debug info automatically on 404 errors
+          setShowDebug(true);
         } else {
           setError('An error occurred. Please try again later.');
         }
@@ -116,6 +129,14 @@ export default function LoginForm() {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleDebugInfo = () => {
+    setShowDebug(!showDebug);
+    // Refresh API config when showing debug info
+    if (!showDebug) {
+      setApiConfig(debugApiConfig());
+    }
   };
 
   return (
@@ -228,6 +249,31 @@ export default function LoginForm() {
           )}
         </button>
       </div>
+      
+      {/* Debug button */}
+      <div className="mt-4 text-center">
+        <button 
+          type="button" 
+          onClick={toggleDebugInfo}
+          className="text-xs text-gray-500 flex items-center mx-auto"
+        >
+          <Bug className="h-3 w-3 mr-1" />
+          {showDebug ? 'Hide debug info' : 'Show debug info'}
+        </button>
+      </div>
+      
+      {/* Debug information */}
+      {showDebug && apiConfig && (
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs font-mono overflow-auto">
+          <h4 className="font-bold mb-2 text-gray-700">API Configuration:</h4>
+          <pre className="whitespace-pre-wrap break-all">
+            {JSON.stringify(apiConfig, null, 2)}
+          </pre>
+          <p className="mt-2 text-gray-500">
+            If baseURL doesn't end with '/api', this could be causing your login issues.
+          </p>
+        </div>
+      )}
     </form>
   );
 } 
