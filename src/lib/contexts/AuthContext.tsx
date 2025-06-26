@@ -34,27 +34,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  // Initial auth check - only runs once
   useEffect(() => {
-    const verifyAuth = async () => {
+    const initialAuthCheck = async () => {
       await checkAuth();
-      
-      // If on a protected route but not authenticated, redirect to login
-      if (!isPublicRoute(pathname) && !isAuthenticated) {
-        console.log('[AuthContext] Not authenticated on protected route, redirecting to login');
-        router.push('/login');
-      }
-      
-      // If authenticated but on the wrong dashboard, redirect to correct one
-      if (isAuthenticated && user && shouldRedirectToDashboard(pathname, user.role)) {
-        console.log('[AuthContext] Redirecting to proper dashboard');
-        redirectToDashboard(user.role);
-      }
+      setAuthChecked(true);
     };
     
-    verifyAuth();
+    initialAuthCheck();
+  }, []);
+  
+  // Handle routing based on auth state
+  useEffect(() => {
+    if (!authChecked) return; // Wait for initial auth check
+    
+    // If on a protected route but not authenticated, redirect to login
+    if (!isPublicRoute(pathname) && !isAuthenticated) {
+      console.log('[AuthContext] Not authenticated on protected route, redirecting to login');
+      router.push('/login');
+      return;
+    }
+    
+    // If authenticated but on the wrong dashboard, redirect to correct one
+    if (isAuthenticated && user && shouldRedirectToDashboard(pathname, user.role)) {
+      console.log('[AuthContext] Redirecting to proper dashboard');
+      redirectToDashboard(user.role);
+    }
     
     // Setup periodic token validation
     const tokenCheckInterval = setInterval(() => {
@@ -62,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 60000); // Check token every minute
     
     return () => clearInterval(tokenCheckInterval);
-  }, [pathname, isAuthenticated, user]);
+  }, [pathname, isAuthenticated, user, authChecked]);
 
   // Check if a route is public
   const isPublicRoute = (path: string | null): boolean => {
@@ -123,11 +132,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[AuthContext] Checking authentication status');
       
+      // Check if we have a token first before making API calls
+      if (!authService.isAuthenticated()) {
+        console.log('[AuthContext] No valid token found, not authenticated');
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+      
       // Race between auth check and timeout
       const result = await Promise.race([
-        authService.isAuthenticated() 
-          ? authService.getCurrentUser().then(user => ({ user })).catch(() => ({ authError: true }))
-          : Promise.resolve({ noAuth: true }),
+        authService.getCurrentUser().then(user => ({ user })).catch(() => ({ authError: true })),
         timeoutPromise
       ]);
       
@@ -138,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
-      if ('noAuth' in result || 'authError' in result) {
-        console.log('[AuthContext] Not authenticated or auth error');
+      if ('authError' in result) {
+        console.log('[AuthContext] Auth error occurred');
         setIsAuthenticated(false);
         setUser(null);
         return;
@@ -165,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user } = await authService.login(credentials, rememberMe);
       setUser(user);
       setIsAuthenticated(true);
+      setAuthChecked(true);
       
       // Redirect based on role
       console.log(`[AuthContext] Login successful, redirecting to ${user.role} dashboard`);

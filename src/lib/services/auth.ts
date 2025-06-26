@@ -23,7 +23,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'manager';
+  role: string;
 }
 
 export interface AuthResponse {
@@ -36,6 +36,26 @@ interface JWTPayload {
   role: string;
   exp: number;
 }
+
+// Helper function to ensure API endpoint has correct format
+const formatApiUrl = (endpoint: string): string => {
+  // If API_BASE already has /api
+  if (API_BASE.endsWith('/api')) {
+    return `${API_BASE}/${endpoint.replace(/^\//, '')}`;
+  }
+  
+  // If endpoint already has /api
+  if (endpoint.startsWith('/api/')) {
+    return `${API_BASE}${endpoint}`;
+  }
+  
+  // If neither has /api
+  if (!endpoint.startsWith('/')) {
+    return `${API_BASE}/api/${endpoint}`;
+  }
+  
+  return `${API_BASE}/api${endpoint}`;
+};
 
 class AuthService {
   private csrfToken: string | null = null;
@@ -73,43 +93,40 @@ class AuthService {
     );
   }
 
-  private setAuthToken(token: string, rememberMe = false) {
-    if (typeof window !== 'undefined') {
-      // Set token in cookie with appropriate expiry
-      const expiryDays = rememberMe ? TOKEN_EXPIRY_DAYS : null; // null means session cookie
-      Cookies.set(TOKEN_COOKIE_NAME, token, { 
-        expires: expiryDays ? expiryDays : undefined,
-        secure: process.env.NODE_ENV === 'production', 
-        sameSite: 'strict',
-        httpOnly: false // Note: Client-side cookies can't be httpOnly
-      });
-      
-      // Set token in localStorage as backup
-      localStorage.setItem(TOKEN_COOKIE_NAME, token);
-      
-      // Set axios default header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      // Extract CSRF token from JWT
-      try {
-        const decoded = jwtDecode<JWTPayload>(token);
-        // In a real app, your JWT should contain a csrf claim
-        this.csrfToken = decoded.userId.toString() + '.' + Math.random().toString(36).substring(2);
-      } catch (error) {
-        // Silent error, failsafe approach
-        this.csrfToken = null;
-      }
-    }
+  private setAuthToken(token: string, rememberMe: boolean): void {
+    if (typeof window === 'undefined') return;
+    
+    // Set token in cookie with appropriate expiry
+    const expires = rememberMe ? TOKEN_EXPIRY_DAYS : undefined;
+    Cookies.set(TOKEN_COOKIE_NAME, token, { expires, secure: window.location.protocol === 'https:' });
+    
+    // Also store in localStorage as backup
+    localStorage.setItem(TOKEN_COOKIE_NAME, token);
+    
+    // Set default Authorization header for all future requests
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    
+    console.log(`[Auth] Token set${rememberMe ? ' with remember me' : ''}`);
   }
 
-  private clearAuthToken() {
-    if (typeof window !== 'undefined') {
-      Cookies.remove(TOKEN_COOKIE_NAME);
-      localStorage.removeItem(TOKEN_COOKIE_NAME);
-      localStorage.removeItem(USER_STORAGE_KEY);
-      delete axios.defaults.headers.common['Authorization'];
-      this.csrfToken = null;
-    }
+  private clearAuthToken(): void {
+    if (typeof window === 'undefined') return;
+    
+    // Clear from cookie
+    Cookies.remove(TOKEN_COOKIE_NAME);
+    
+    // Clear from localStorage
+    localStorage.removeItem(TOKEN_COOKIE_NAME);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    
+    // Remove Authorization header
+    delete axios.defaults.headers.common['Authorization'];
+    
+    console.log('[Auth] Token cleared');
+  }
+
+  logout(): void {
+    this.clearAuthToken();
   }
 
   async login(credentials: LoginCredentials, rememberMe = false): Promise<AuthResponse> {
@@ -125,15 +142,9 @@ class AuthService {
         }
       }
 
-      // Log the API endpoint for debugging
-      console.log(`[Auth] Attempting login to: ${API_BASE}/auth/login`);
-      
-      // Check if API_BASE already includes /api
-      const loginEndpoint = API_BASE.endsWith('/api') 
-        ? `${API_BASE}/auth/login`
-        : `${API_BASE}/api/auth/login`;
-      
-      console.log(`[Auth] Final login endpoint: ${loginEndpoint}`);
+      // Format the login endpoint properly
+      const loginEndpoint = formatApiUrl('/auth/login');
+      console.log(`[Auth] Attempting login to: ${loginEndpoint}`);
 
       const response = await axios.post<AuthResponse>(
         loginEndpoint, 
@@ -151,6 +162,8 @@ class AuthService {
       
       return response.data;
     } catch (error: any) {
+      console.error('[Auth] Login error:', error);
+      
       if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
@@ -178,18 +191,14 @@ class AuthService {
     try {
       // Initialize authorization header with token
       const token = this.getToken();
-      if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      } else if (API_TOKEN) {
-        // If no user token, use the API token for Choreo
-        axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
+      if (!token) {
+        throw new Error('No authentication token found');
       }
       
-      // Check if API_BASE already includes /api
-      const meEndpoint = API_BASE.endsWith('/api') 
-        ? `${API_BASE}/auth/me`
-        : `${API_BASE}/api/auth/me`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
+      // Format the me endpoint properly
+      const meEndpoint = formatApiUrl('/auth/me');
       console.log(`[Auth] Fetching current user from: ${meEndpoint}`);
       
       const response = await axios.get<User>(
@@ -205,34 +214,14 @@ class AuthService {
       
       return user;
     } catch (error: any) {
+      console.error('[Auth] Get current user error:', error);
+      
       // If 401, clear token
       if (error.response && error.response.status === 401) {
         this.clearAuthToken();
       }
+      
       throw new Error('Failed to fetch user data');
-    }
-  }
-
-  logout() {
-    // Perform a server-side logout if your API supports it
-    try {
-      if (this.isAuthenticated()) {
-        // Check if API_BASE already includes /api
-        const logoutEndpoint = API_BASE.endsWith('/api') 
-          ? `${API_BASE}/auth/logout`
-          : `${API_BASE}/api/auth/logout`;
-        
-        console.log(`[Auth] Logging out via: ${logoutEndpoint}`);
-        
-        axios.post(logoutEndpoint, {})
-          .catch(() => {}); // Silently catch errors on logout
-      }
-    } finally {
-      this.clearAuthToken();
-      // Set the API token for Choreo if available
-      if (API_TOKEN) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
-      }
     }
   }
 
@@ -248,12 +237,14 @@ class AuthService {
       
       // Check if token is expired
       if (decoded.exp < currentTime) {
+        console.log('[Auth] Token expired during validation');
         this.clearAuthToken();
         return false;
       }
       
       return true;
     } catch (error) {
+      console.error('[Auth] Token validation error:', error);
       this.clearAuthToken();
       return false;
     }

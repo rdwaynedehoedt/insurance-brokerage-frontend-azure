@@ -1,10 +1,21 @@
 'use client';
 
-import { apiClient } from './api';
+import apiClient, { formatApiUrl } from './api';
 
 export interface UploadDocumentResponse {
   fileName: string;
   url: string;
+  message: string;
+}
+
+export interface TokenResponse {
+  token: string;
+  url: string;
+  expires: string;
+}
+
+export interface DeleteDocumentResponse {
+  message: string;
 }
 
 export const documentService = {
@@ -20,7 +31,7 @@ export const documentService = {
     formData.append('file', file);
     
     const response = await apiClient.post<UploadDocumentResponse>(
-      `/documents/upload/${clientId}/${documentType}`,
+      formatApiUrl(`/documents/upload/${clientId}/${documentType}`),
       formData,
       {
         headers: {
@@ -48,8 +59,8 @@ export const documentService = {
       console.log(`Getting token for document: ${clientId}/${documentType}/${baseFileName}`);
       
       // Get a public token for accessing the document
-      const response = await apiClient.get<{ token: string, url: string, expires: string }>(
-        `/documents/token/${clientId}/${documentType}/${baseFileName}`
+      const response = await apiClient.get<TokenResponse>(
+        formatApiUrl(`/documents/token/${clientId}/${documentType}/${baseFileName}`)
       );
       
       console.log(`Token received successfully, URL: ${response.data.url}`);
@@ -110,13 +121,13 @@ export const documentService = {
       });
       
       // Make sure we're only using the actual filename for the delete request
-      const endpoint = `documents/delete/${clientId}/${documentType}/${baseFileName}`;
+      const endpoint = formatApiUrl(`/documents/delete/${clientId}/${documentType}/${baseFileName}`);
       
       console.log(`DELETE request to endpoint: ${endpoint}`);
       
       // Make the request with debug logging
       try {
-        const response = await apiClient.delete(endpoint);
+        const response = await apiClient.delete<DeleteDocumentResponse>(endpoint);
         console.log('Document deleted successfully:', response.data);
       } catch (apiError: any) {
         console.error('API error details:', {
