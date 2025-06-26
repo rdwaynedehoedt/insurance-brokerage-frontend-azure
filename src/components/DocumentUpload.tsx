@@ -56,7 +56,30 @@ const DocumentUpload = ({
         // Set document URL directly if it's a direct Azure URL
         if (existingUrl.includes('blob.core.windows.net')) {
           console.log('Using direct Azure blob URL');
-          setDocumentUrl(existingUrl);
+          
+          // Extract the filename from the URL
+          const fileName = existingUrl.split('/').pop()?.split('?')[0] || '';
+          console.log('Extracted filename:', fileName);
+          
+          // Extract client ID and document type from the URL path
+          const urlParts = existingUrl.split('/');
+          const containerPos = existingUrl.indexOf('customer-documents');
+          
+          if (containerPos > -1 && urlParts.length >= containerPos + 4) {
+            const urlClientId = urlParts[urlParts.length - 3]; 
+            const urlDocType = urlParts[urlParts.length - 2];
+            
+            console.log(`Extracted path info: clientId=${urlClientId}, docType=${urlDocType}`);
+            
+            // Get a secure URL using extracted values
+            const secureUrl = await documentService.getSecureDocumentUrl(urlClientId, urlDocType, fileName);
+            setDocumentUrl(secureUrl);
+          } else {
+            // Fallback to using provided client ID and document type
+            const secureUrl = await documentService.getSecureDocumentUrl(clientId, documentType, fileName);
+            setDocumentUrl(secureUrl);
+          }
+          
           setFileType(getFileTypeFromUrl(existingUrl) as 'image' | 'pdf' | null);
           setIsViewModalOpen(true);
           setIsLoading(false);
@@ -78,8 +101,13 @@ const DocumentUpload = ({
         // Open the modal
         setIsViewModalOpen(true);
         setIsLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error viewing document:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
         toast.error('Failed to retrieve document');
         setIsLoading(false);
       }

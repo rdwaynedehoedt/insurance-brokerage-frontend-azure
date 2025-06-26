@@ -45,18 +45,37 @@ export const documentService = {
       // Extract just the filename without path or query parameters
       const baseFileName = fileName.split('/').pop()?.split('?')[0] || fileName;
       
+      console.log(`Getting token for document: ${clientId}/${documentType}/${baseFileName}`);
+      
       // Get a public token for accessing the document
       const response = await apiClient.get<{ token: string, url: string, expires: string }>(
         `/documents/token/${clientId}/${documentType}/${baseFileName}`
       );
       
+      console.log(`Token received successfully, URL: ${response.data.url}`);
+      
       // Return the public URL with token
       return response.data.url;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting secure document URL:', error);
-      // Fallback - might not work without authentication
+      console.error('Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config?.url
+      });
+      
+      // Generate a timestamp-based token for the fallback URL
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fallbackToken = `${timestamp}_${randomString}`;
+      
+      // Use the public endpoint as fallback instead of secure
       const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
-      return `${apiBase}/documents/secure/${clientId}/${documentType}/${fileName}`;
+      const fallbackUrl = `${apiBase}/documents/public/${fallbackToken}/${clientId}/${documentType}/${fileName}`;
+      
+      console.log(`Using fallback URL: ${fallbackUrl}`);
+      return fallbackUrl;
     }
   },
   
