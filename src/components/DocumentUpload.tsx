@@ -163,16 +163,6 @@ const DocumentUpload = ({
             </div>
             
             <div className="flex items-center space-x-2">
-              {existingUrl && (
-                <button
-                  type="button"
-                  onClick={viewDocument}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Loading...' : 'View'}
-                </button>
-              )}
               
               {!readOnly && (
                 <button
