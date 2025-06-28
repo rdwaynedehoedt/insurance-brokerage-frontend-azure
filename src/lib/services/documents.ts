@@ -91,7 +91,7 @@ export const documentService = {
       });
       
       // Make sure we're only using the actual filename for the delete request
-      const endpoint = `documents/delete/${clientId}/${documentType}/${baseFileName}`;
+      const endpoint = `documents/${clientId}/${documentType}?blobUrl=${encodeURIComponent(fileName)}`;
       
       console.log(`DELETE request to endpoint: ${endpoint}`);
       
@@ -100,13 +100,7 @@ export const documentService = {
         const response = await apiClient.delete(endpoint);
         console.log('Document deleted successfully:', response.data);
       } catch (apiError: any) {
-        console.error('API error details:', {
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
-          data: apiError.response?.data,
-          headers: apiError.response?.headers,
-          config: apiError.config
-        });
+        console.error('API error details:', apiError.response?.data || {});
         throw apiError;
       }
     } catch (error) {

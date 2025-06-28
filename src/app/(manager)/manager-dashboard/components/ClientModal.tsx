@@ -290,6 +290,109 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+          <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="nic_proof"
+              label="NIC Proof"
+              existingUrl={formData.nic_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
+              onDelete={() => setFormData({ ...formData, nic_proof: '' })}
+              readOnly={false}
+            />
+
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="dob_proof"
+              label="DOB Proof"
+              existingUrl={formData.dob_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
+              onDelete={() => setFormData({ ...formData, dob_proof: '' })}
+              readOnly={false}
+            />
+
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="business_registration"
+              label="Business Registration"
+              existingUrl={formData.business_registration as string}
+              onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
+              onDelete={() => setFormData({ ...formData, business_registration: '' })}
+              readOnly={false}
+            />
+
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="svat_proof"
+              label="SVAT Proof"
+              existingUrl={formData.svat_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
+              onDelete={() => setFormData({ ...formData, svat_proof: '' })}
+              readOnly={false}
+            />
+
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="vat_proof"
+              label="VAT Proof"
+              existingUrl={formData.vat_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
+              onDelete={() => setFormData({ ...formData, vat_proof: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="coverage_proof"
+              label="Coverage Proof"
+              existingUrl={formData.coverage_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
+              onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="sum_insured_proof"
+              label="Sum Insured Proof"
+              existingUrl={formData.sum_insured_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
+              onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="policy_fee_invoice"
+              label="Policy Fee Invoice"
+              existingUrl={formData.policy_fee_invoice as string}
+              onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
+              onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="vat_fee_debit_note"
+              label="VAT Debit Note"
+              existingUrl={formData.vat_fee_debit_note as string}
+              onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
+              onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="payment_receipt_proof"
+              label="Payment Receipt"
+              existingUrl={formData.payment_receipt_proof as string}
+              onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
+              onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
+              readOnly={false}
+            />
+          </div>
+
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -565,109 +668,6 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
-          </div>
-
-          <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Documents</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="nic_proof"
-              label="NIC Proof"
-              existingUrl={formData.nic_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
-              onDelete={() => setFormData({ ...formData, nic_proof: '' })}
-              readOnly={!!client && !!formData.nic_proof}
-            />
-
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="dob_proof"
-              label="DOB Proof"
-              existingUrl={formData.dob_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
-              onDelete={() => setFormData({ ...formData, dob_proof: '' })}
-              readOnly={!!client && !!formData.dob_proof}
-            />
-
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="business_registration"
-              label="Business Registration"
-              existingUrl={formData.business_registration as string}
-              onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
-              onDelete={() => setFormData({ ...formData, business_registration: '' })}
-              readOnly={!!client && !!formData.business_registration}
-            />
-
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="svat_proof"
-              label="SVAT Proof"
-              existingUrl={formData.svat_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
-              onDelete={() => setFormData({ ...formData, svat_proof: '' })}
-              readOnly={!!client && !!formData.svat_proof}
-            />
-
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="vat_proof"
-              label="VAT Proof"
-              existingUrl={formData.vat_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
-              onDelete={() => setFormData({ ...formData, vat_proof: '' })}
-              readOnly={!!client && !!formData.vat_proof}
-            />
-            
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="coverage_proof"
-              label="Coverage Proof"
-              existingUrl={formData.coverage_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
-              onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
-              readOnly={!!client && !!formData.coverage_proof}
-            />
-            
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="sum_insured_proof"
-              label="Sum Insured Proof"
-              existingUrl={formData.sum_insured_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
-              onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
-              readOnly={!!client && !!formData.sum_insured_proof}
-            />
-            
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="policy_fee_invoice"
-              label="Policy Fee Invoice"
-              existingUrl={formData.policy_fee_invoice as string}
-              onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
-              onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
-              readOnly={!!client && !!formData.policy_fee_invoice}
-            />
-            
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="vat_fee_debit_note"
-              label="VAT Debit Note"
-              existingUrl={formData.vat_fee_debit_note as string}
-              onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
-              onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
-              readOnly={!!client && !!formData.vat_fee_debit_note}
-            />
-            
-            <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
-              documentType="payment_receipt_proof"
-              label="Payment Receipt"
-              existingUrl={formData.payment_receipt_proof as string}
-              onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
-              onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
-              readOnly={!!client && !!formData.payment_receipt_proof}
-            />
           </div>
 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Policy Information</h3>
