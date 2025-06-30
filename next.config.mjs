@@ -7,7 +7,7 @@ const nextConfig = {
   compress: true,
   // Enable image optimization
   images: {
-    domains: [],
+    domains: ['localhost'],
     // Optimize image loading
     formats: ['image/avif', 'image/webp'],
   },
@@ -25,6 +25,15 @@ const nextConfig = {
   },
   // Enable output file tracing for Azure hosted environments
   output: 'standalone',
+  // Add favicon configuration
+  async rewrites() {
+    return [
+      {
+        source: '/favicon.ico',
+        destination: '/images/CIB-Logo.png',
+      },
+    ];
+  },
 }
 
 export default nextConfig 
