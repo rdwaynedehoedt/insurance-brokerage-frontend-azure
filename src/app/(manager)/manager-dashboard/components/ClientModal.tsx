@@ -178,7 +178,10 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
       const safeClient = Object.fromEntries(
         Object.entries(client).map(([key, value]) => [key, value === null ? '' : value])
       );
-      setFormData(safeClient);
+      setFormData({
+        ...defaultClientState,
+        ...safeClient
+      });
     } else {
       // Reset to empty state when adding a new client
       setFormData({ ...defaultClientState });
