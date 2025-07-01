@@ -435,12 +435,27 @@ export default function ManagerDashboard() {
   const fetchClients = async () => {
     setIsLoading(true);
     try {
-      // Fetch all clients
       const response = await clientService.getAllClients();
       setClients(response.clients);
       setTotalClientCount(response.totalCount);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error fetching clients:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error fetching clients:', error.message);
+        } else {
+          console.error('Unknown error object fetching clients:', error);
+        }
+      } else {
+        console.error('Non-object error fetching clients:', typeof error, error);
+      }
       toast.error('Failed to load clients');
     } finally {
       setIsLoading(false);
@@ -457,8 +472,24 @@ export default function ManagerDashboard() {
       const response = await clientService.getAllClients(itemsPerPage, offset, searchTerm);
       setClients(response.clients);
       setTotalClientCount(response.totalCount);
-    } catch (error) {
-      console.error('Error fetching clients page:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error fetching clients page:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error fetching clients page:', error.message);
+        } else {
+          console.error('Unknown error object fetching clients page:', error);
+        }
+      } else {
+        console.error('Non-object error fetching clients page:', typeof error, error);
+      }
       toast.error('Failed to load clients');
     } finally {
       setIsLoading(false);
@@ -503,8 +534,24 @@ export default function ManagerDashboard() {
       toast.success(`${clientToDelete.client_name} deleted successfully`);
       setIsDeleteModalOpen(false);
       await fetchClients(); // Ensure we reload the client list after deletion
-    } catch (error) {
-      console.error('Error deleting client:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error deleting client:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error deleting client:', error.message);
+        } else {
+          console.error('Unknown error object deleting client:', error);
+        }
+      } else {
+        console.error('Non-object error deleting client:', typeof error, error);
+      }
       toast.error('Failed to delete client');
     } finally {
       setIsLoading(false);
@@ -574,7 +621,23 @@ export default function ManagerDashboard() {
         }, 3000);
       })
       .catch(error => {
-        console.error('Error importing CSV:', error);
+        // Improved error logging
+        if (error && typeof error === 'object') {
+          if (error.response) {
+            console.error('API error importing CSV:', {
+              status: error.response.status,
+              statusText: error.response.statusText,
+              data: error.response.data,
+              url: error.config?.url
+            });
+          } else if (error.message) {
+            console.error('Error importing CSV:', error.message);
+          } else {
+            console.error('Unknown error object importing CSV:', error);
+          }
+        } else {
+          console.error('Non-object error importing CSV:', typeof error, error);
+        }
         toast.error(
           <div>
             <p className="font-medium">Import failed</p>
