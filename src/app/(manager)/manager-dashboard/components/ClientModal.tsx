@@ -98,8 +98,79 @@ const defaultClientState: Partial<ClientType> = {
 };
 
 export default function ClientModal({ isOpen, onClose, client, onClientSaved }: ClientModalProps) {
-  const [formData, setFormData] = useState<Partial<ClientType>>({ ...defaultClientState });
+  const [formData, setFormData] = useState<ClientType>({
+    id: '',
+    introducer_code: '',
+    customer_type: '',
+    product: '',
+    policy_: '',
+    insurance_provider: '',
+    branch: '',
+    client_name: '',
+    street1: '',
+    street2: '',
+    city: '',
+    district: '',
+    province: '',
+    telephone: '',
+    mobile_no: '',
+    contact_person: '',
+    email: '',
+    social_media: '',
+    nic_proof: '',
+    dob_proof: '',
+    business_registration: '',
+    svat_proof: '',
+    vat_proof: '',
+    coverage_proof: '',
+    sum_insured_proof: '',
+    policy_fee_invoice: '',
+    vat_fee_debit_note: '',
+    payment_receipt_proof: '',
+    policy_type: '',
+    policy_no: '',
+    policy_period_from: '',
+    policy_period_to: '',
+    coverage: '',
+    sum_insured: 0,
+    basic_premium: 0,
+    srcc_premium: 0,
+    tc_premium: 0,
+    net_premium: 0,
+    stamp_duty: 0,
+    admin_fees: 0,
+    road_safety_fee: 0,
+    policy_fee: 0,
+    vat_fee: 0,
+    total_invoice: 0,
+    debit_note: '',
+    payment_receipt: '',
+    commission_type: '',
+    commission_basic: 0,
+    commission_srcc: 0,
+    commission_tc: 0,
+    sales_rep_id: 0,
+    policies: 0,
+    ceilao_ib_file_no: '',
+    policyholder: '',
+    vehicle_number: '',
+    main_class: '',
+    proposal_form_doc: '',
+    proposal_form_field: '',
+    quotation_doc: '',
+    quotation_field: '',
+    schedule_doc: '',
+    cr_copy_doc: '',
+    invoice_debit_note_doc: '',
+    invoice_debit_note_field: '',
+    payment_receipt_doc: '',
+    payment_receipt_field: '',
+    nic_br_doc: ''
+  });
   const [errors, setErrors] = useState<ClientErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tempClientId] = useState(() => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (client) {
@@ -161,22 +232,15 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
 
   // Handle document URL updates
   const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
-    // Ensure URL doesn't have trailing or leading whitespace
-    const trimmedUrl = url.trim();
+    // Store the uploaded document URL for later processing
+    setUploadedDocuments(prev => ({ ...prev, [documentType]: url }));
     
-    // Check if the URL is a long Azure Blob Storage URL with SAS token
-    // These can cause issues when sent in requests due to their length
-    if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
-      console.log(`Truncating long Azure URL for ${documentType}`);
-      
-      // Just store the URL without the SAS token for database storage
-      // The secure document endpoint will handle token generation when needed
-      const urlParts = trimmedUrl.split('?');
-      const baseUrl = urlParts[0];
-      
-      setFormData({ ...formData, [documentType]: baseUrl });
+    // For new clients, we'll update the URL after client creation
+    if (!client) {
+      setFormData({ ...formData, [documentType]: url });
     } else {
-      setFormData({ ...formData, [documentType]: trimmedUrl });
+      // For existing clients, update immediately
+      setFormData({ ...formData, [documentType]: url });
     }
   };
 
@@ -190,100 +254,74 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      try {
-        // Create a copy of formData without any modifications
-        const clientData = { ...formData };
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      let savedClient: ClientType;
+      
+      if (client) {
+        // Update existing client
+        await clientService.updateClient(client.id, formData);
+        savedClient = { ...client, ...formData };
+      } else {
+        // Create new client
+        const clientId = await clientService.createClient(formData);
+        savedClient = { ...formData, id: clientId };
         
-        // Make sure to remove the id field for new clients
-        if (!client && clientData.id === '') {
-          delete clientData.id;
-        }
-        
-        // Trim all string fields to prevent issues with whitespace
-        Object.keys(clientData).forEach(key => {
-          const value = clientData[key as keyof typeof clientData];
-          if (typeof value === 'string') {
-            // @ts-ignore - This is safe because we've verified the value is a string
-            clientData[key] = value.trim();
-          }
-        });
-        
-        if (client) {
-          // Update existing client
-          await clientService.updateClient(client.id as string, clientData);
-          toast.success('Client updated successfully', {
-            duration: 4000,
-            position: 'top-center',
-          });
-        } else {
-          // Create new client
-          const newClientId = await clientService.createClient(clientData as ClientType);
-          toast.success(`Client added successfully`, {
-            duration: 4000,
-            position: 'top-center',
-          });
-        }
-        
-        // Reset form data after successful submission
-        setFormData({ ...defaultClientState });
-        setErrors({});
-        
-        // Call the callback function if provided
-        if (onClientSaved) {
-          onClientSaved();
-        }
-        
-        // Close the modal
-        onClose();
-      } catch (error: any) {
-        console.error('Error saving client:', error);
-        
-        // Extract error message from response if available
-        let errorMessage = 'Failed to save client';
-        let actionRequired = '';
-        
-        // Check for specific database error patterns
-        if (error.message) {
-          // Clean up complex SQL error messages to make them more user-friendly
-          if (error.message.includes('Database error') || error.message.includes('SQL')) {
-            errorMessage = 'Database error occurred while saving client';
-            
-            // Check for common issues
-            if (error.message.includes('duplicate')) {
-              errorMessage = 'This client already exists in the database';
-              actionRequired = 'Please check the client ID or details.';
-            } else if (error.message.includes('updated_at')) {
-              errorMessage = 'Error with date fields';
-              actionRequired = 'Please try again or contact support.';
-            } else if (error.message.includes('violates') || error.message.includes('constraint')) {
-              errorMessage = 'Invalid data provided for this client';
-              actionRequired = 'Please check all required fields.';
-            }
-          } else if (error.message.includes('Network error')) {
-            errorMessage = 'Connection issue with the server';
-            actionRequired = 'Please check your internet connection and try again.';
-          } else {
-            // Use the original error message
-            errorMessage = error.message;
+        // Update document URLs for new client if any documents were uploaded
+        if (Object.keys(uploadedDocuments).length > 0) {
+          try {
+            await updateDocumentUrlsForNewClient(clientId, uploadedDocuments);
+          } catch (error) {
+            console.error('Error updating document URLs:', error);
+            // Don't fail the client creation if document URL update fails
           }
         }
-        
-        // Add action required if available
-        if (actionRequired) {
-          errorMessage = `${errorMessage}. ${actionRequired}`;
-        }
-        
-        toast.error(errorMessage, {
-          duration: 6000, // Show longer for errors
-          position: 'top-center',
-        });
       }
-    } else {
-      toast.error('Please fix the form errors before submitting', {
-        duration: 4000,
-        position: 'top-center',
-      });
+      
+      toast.success(client ? 'Client updated successfully' : 'Client created successfully');
+      
+      if (onClientSaved) {
+        onClientSaved();
+      }
+      
+      handleClose();
+    } catch (error: any) {
+      console.error('Error saving client:', error);
+      toast.error(error.message || 'Failed to save client');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Helper function to update document URLs for new client
+  const updateDocumentUrlsForNewClient = async (newClientId: string, documents: Record<string, string>) => {
+    const { documentService } = await import('@/lib/services/documents');
+    
+    for (const [documentType, oldUrl] of Object.entries(documents)) {
+      if (oldUrl && oldUrl.includes(tempClientId)) {
+        try {
+          // Extract filename from the old URL
+          const filename = oldUrl.split('/').pop()?.split('?')[0];
+          if (filename) {
+            // Use the new endpoint to update the document URL
+            const newUrl = await documentService.updateDocumentUrlForNewClient(
+              tempClientId,
+              newClientId,
+              documentType,
+              filename
+            );
+            
+            console.log(`Updated ${documentType} URL for client ${newClientId}`);
+          }
+        } catch (error) {
+          console.error(`Failed to update ${documentType} URL:`, error);
+        }
+      }
     }
   };
 
@@ -308,7 +346,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="nic_proof"
               label="NIC Proof"
               existingUrl={formData.nic_proof as string}
@@ -318,7 +356,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="dob_proof"
               label="DOB Proof"
               existingUrl={formData.dob_proof as string}
@@ -328,7 +366,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="business_registration"
               label="Business Registration"
               existingUrl={formData.business_registration as string}
@@ -338,7 +376,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="svat_proof"
               label="SVAT Proof"
               existingUrl={formData.svat_proof as string}
@@ -348,7 +386,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="vat_proof"
               label="VAT Proof"
               existingUrl={formData.vat_proof as string}
@@ -358,7 +396,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="coverage_proof"
               label="Coverage Proof"
               existingUrl={formData.coverage_proof as string}
@@ -368,7 +406,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="sum_insured_proof"
               label="Sum Insured Proof"
               existingUrl={formData.sum_insured_proof as string}
@@ -378,7 +416,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="policy_fee_invoice"
               label="Policy Fee Invoice"
               existingUrl={formData.policy_fee_invoice as string}
@@ -388,7 +426,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="vat_fee_debit_note"
               label="VAT Debit Note"
               existingUrl={formData.vat_fee_debit_note as string}
@@ -398,7 +436,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="payment_receipt_proof"
               label="Payment Receipt"
               existingUrl={formData.payment_receipt_proof as string}
@@ -408,7 +446,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="proposal_form_doc"
               label="Proposal Form"
               existingUrl={formData.proposal_form_doc as string}
@@ -418,7 +456,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="quotation_doc"
               label="Quotation"
               existingUrl={formData.quotation_doc as string}
@@ -428,7 +466,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="schedule_doc"
               label="Schedule"
               existingUrl={formData.schedule_doc as string}
@@ -438,7 +476,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="cr_copy_doc"
               label="CR Copy"
               existingUrl={formData.cr_copy_doc as string}
@@ -448,7 +486,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="invoice_debit_note_doc"
               label="Invoice / Debit Note"
               existingUrl={formData.invoice_debit_note_doc as string}
@@ -458,7 +496,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="payment_receipt_doc"
               label="Payment Receipt Doc"
               existingUrl={formData.payment_receipt_doc as string}
@@ -468,7 +506,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? (formData.id || client.id) : tempClientId}
               documentType="nic_br_doc"
               label="NIC / BR"
               existingUrl={formData.nic_br_doc as string}

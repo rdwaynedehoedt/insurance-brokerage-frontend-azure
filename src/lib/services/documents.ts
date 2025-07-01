@@ -107,5 +107,27 @@ export const documentService = {
       console.error('Error deleting document:', error);
       throw error;
     }
+  },
+  
+  /**
+   * Update document URL for a new client (from temp ID to real ID)
+   */
+  async updateDocumentUrlForNewClient(
+    tempClientId: string,
+    realClientId: string,
+    documentType: string,
+    filename: string
+  ): Promise<string> {
+    const response = await apiClient.post<{ newUrl: string }>(
+      '/documents/update-client-urls',
+      {
+        tempClientId,
+        realClientId,
+        documentType,
+        filename
+      }
+    );
+    
+    return response.data.newUrl;
   }
 }; 
