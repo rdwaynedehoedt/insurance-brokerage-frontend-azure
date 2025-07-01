@@ -174,17 +174,30 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
 
   useEffect(() => {
     if (client) {
-      // Convert any null values to empty strings to avoid React controlled component errors
       const safeClient = Object.fromEntries(
-        Object.entries(client).map(([key, value]) => [key, value === null ? '' : value])
+        Object.entries(client).map(([key, value]) => [key, value == null ? '' : value])
       );
-      setFormData({
+      // Ensure all required fields are set to a string
+      const completeClient: ClientType = {
         ...defaultClientState,
-        ...safeClient
-      });
+        ...safeClient,
+        customer_type: safeClient.customer_type || '',
+        product: safeClient.product || '',
+        insurance_provider: safeClient.insurance_provider || '',
+        client_name: safeClient.client_name || '',
+        mobile_no: safeClient.mobile_no || '',
+      };
+      setFormData(completeClient);
     } else {
       // Reset to empty state when adding a new client
-      setFormData({ ...defaultClientState });
+      setFormData({
+        ...defaultClientState,
+        customer_type: defaultClientState.customer_type || '',
+        product: defaultClientState.product || '',
+        insurance_provider: defaultClientState.insurance_provider || '',
+        client_name: defaultClientState.client_name || '',
+        mobile_no: defaultClientState.mobile_no || '',
+      });
     }
   }, [client, isOpen]);
 
@@ -249,7 +262,14 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
 
   // Modified to ensure form is reset when closed
   const handleClose = () => {
-    setFormData({ ...defaultClientState });
+    setFormData({
+      ...defaultClientState,
+      customer_type: defaultClientState.customer_type || '',
+      product: defaultClientState.product || '',
+      insurance_provider: defaultClientState.insurance_provider || '',
+      client_name: defaultClientState.client_name || '',
+      mobile_no: defaultClientState.mobile_no || '',
+    });
     setErrors({});
     onClose();
   };
@@ -268,7 +288,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
       
       if (client) {
         // Update existing client
-        await clientService.updateClient(client.id, formData);
+        await clientService.updateClient(client.id || '', formData);
         savedClient = { ...client, ...formData };
       } else {
         // Create new client
@@ -349,7 +369,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="nic_proof"
               label="NIC Proof"
               existingUrl={formData.nic_proof as string}
@@ -359,7 +379,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="dob_proof"
               label="DOB Proof"
               existingUrl={formData.dob_proof as string}
@@ -369,7 +389,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="business_registration"
               label="Business Registration"
               existingUrl={formData.business_registration as string}
@@ -379,7 +399,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="svat_proof"
               label="SVAT Proof"
               existingUrl={formData.svat_proof as string}
@@ -389,7 +409,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="vat_proof"
               label="VAT Proof"
               existingUrl={formData.vat_proof as string}
@@ -399,7 +419,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="coverage_proof"
               label="Coverage Proof"
               existingUrl={formData.coverage_proof as string}
@@ -409,7 +429,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="sum_insured_proof"
               label="Sum Insured Proof"
               existingUrl={formData.sum_insured_proof as string}
@@ -419,7 +439,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="policy_fee_invoice"
               label="Policy Fee Invoice"
               existingUrl={formData.policy_fee_invoice as string}
@@ -429,7 +449,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="vat_fee_debit_note"
               label="VAT Debit Note"
               existingUrl={formData.vat_fee_debit_note as string}
@@ -439,7 +459,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="payment_receipt_proof"
               label="Payment Receipt"
               existingUrl={formData.payment_receipt_proof as string}
@@ -449,7 +469,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="proposal_form_doc"
               label="Proposal Form"
               existingUrl={formData.proposal_form_doc as string}
@@ -459,7 +479,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="quotation_doc"
               label="Quotation"
               existingUrl={formData.quotation_doc as string}
@@ -469,7 +489,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="schedule_doc"
               label="Schedule"
               existingUrl={formData.schedule_doc as string}
@@ -479,7 +499,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="cr_copy_doc"
               label="CR Copy"
               existingUrl={formData.cr_copy_doc as string}
@@ -489,7 +509,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="invoice_debit_note_doc"
               label="Invoice / Debit Note"
               existingUrl={formData.invoice_debit_note_doc as string}
@@ -499,7 +519,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="payment_receipt_doc"
               label="Payment Receipt Doc"
               existingUrl={formData.payment_receipt_doc as string}
@@ -509,7 +529,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={client ? (formData.id || client.id) : tempClientId}
+              clientId={String(client ? (formData.id || client.id) : tempClientId)}
               documentType="nic_br_doc"
               label="NIC / BR"
               existingUrl={formData.nic_br_doc as string}
