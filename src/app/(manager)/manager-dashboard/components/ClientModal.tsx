@@ -52,11 +52,11 @@ const defaultClientState: Partial<ClientType> = {
     business_registration: '',
     svat_proof: '',
     vat_proof: '',
-  coverage_proof: '',
-  sum_insured_proof: '',
-  policy_fee_invoice: '',
-  vat_fee_debit_note: '',
-  payment_receipt_proof: '',
+    coverage_proof: '',
+    sum_insured_proof: '',
+    policy_fee_invoice: '',
+    vat_fee_debit_note: '',
+    payment_receipt_proof: '',
     policy_type: '',
     policy_no: '',
     policy_period_from: '',
@@ -79,7 +79,22 @@ const defaultClientState: Partial<ClientType> = {
     commission_basic: 0,
     commission_srcc: 0,
     commission_tc: 0,
-    policies: 0
+    policies: 0,
+    ceilao_ib_file_no: '',
+    policyholder: '',
+    vehicle_number: '',
+    main_class: '',
+    proposal_form_doc: '',
+    proposal_form_field: '',
+    quotation_doc: '',
+    quotation_field: '',
+    schedule_doc: '',
+    cr_copy_doc: '',
+    invoice_debit_note_doc: '',
+    invoice_debit_note_field: '',
+    payment_receipt_doc: '',
+    payment_receipt_field: '',
+    nic_br_doc: ''
 };
 
 export default function ClientModal({ isOpen, onClose, client, onClientSaved }: ClientModalProps) {
@@ -391,6 +406,76 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
               readOnly={false}
             />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="proposal_form_doc"
+              label="Proposal Form"
+              existingUrl={formData.proposal_form_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('proposal_form_doc', url)}
+              onDelete={() => setFormData({ ...formData, proposal_form_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="quotation_doc"
+              label="Quotation"
+              existingUrl={formData.quotation_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('quotation_doc', url)}
+              onDelete={() => setFormData({ ...formData, quotation_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="schedule_doc"
+              label="Schedule"
+              existingUrl={formData.schedule_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('schedule_doc', url)}
+              onDelete={() => setFormData({ ...formData, schedule_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="cr_copy_doc"
+              label="CR Copy"
+              existingUrl={formData.cr_copy_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('cr_copy_doc', url)}
+              onDelete={() => setFormData({ ...formData, cr_copy_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="invoice_debit_note_doc"
+              label="Invoice / Debit Note"
+              existingUrl={formData.invoice_debit_note_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('invoice_debit_note_doc', url)}
+              onDelete={() => setFormData({ ...formData, invoice_debit_note_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="payment_receipt_doc"
+              label="Payment Receipt Doc"
+              existingUrl={formData.payment_receipt_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_doc', url)}
+              onDelete={() => setFormData({ ...formData, payment_receipt_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="nic_br_doc"
+              label="NIC / BR"
+              existingUrl={formData.nic_br_doc as string}
+              onUploadSuccess={(url) => handleDocumentUpload('nic_br_doc', url)}
+              onDelete={() => setFormData({ ...formData, nic_br_doc: '' })}
+              readOnly={false}
+            />
           </div>
 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Basic Information</h3>
@@ -531,6 +616,62 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               {errors.client_name && (
                 <p className="mt-1 text-sm text-red-600">{errors.client_name}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ceilao IB File No.
+              </label>
+              <input
+                type="text"
+                value={formData.ceilao_ib_file_no}
+                onChange={(e) => setFormData({ ...formData, ceilao_ib_file_no: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Ceilao IB File Number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Policyholder
+              </label>
+              <input
+                type="text"
+                value={formData.policyholder}
+                onChange={(e) => setFormData({ ...formData, policyholder: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Policyholder Name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vehicle Number
+              </label>
+              <input
+                type="text"
+                value={formData.vehicle_number}
+                onChange={(e) => setFormData({ ...formData, vehicle_number: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Vehicle Number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Main Class
+              </label>
+              <select
+                value={formData.main_class}
+                onChange={(e) => setFormData({ ...formData, main_class: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Select Main Class</option>
+                <option value="Comprehensive">Comprehensive</option>
+                <option value="Third Party">Third Party</option>
+                <option value="Third Party Fire & Theft">Third Party Fire & Theft</option>
+                <option value="Act Only">Act Only</option>
+              </select>
             </div>
           </div>
 
@@ -756,6 +897,61 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 value={formData.sum_insured}
                 onChange={(e) => setFormData({ ...formData, sum_insured: Number(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+
+          <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Document Fields</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Proposal Form Field
+              </label>
+              <input
+                type="text"
+                value={formData.proposal_form_field}
+                onChange={(e) => setFormData({ ...formData, proposal_form_field: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Proposal Form Field"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quotation Field
+              </label>
+              <input
+                type="text"
+                value={formData.quotation_field}
+                onChange={(e) => setFormData({ ...formData, quotation_field: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Quotation Field"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Invoice / Debit Note Field
+              </label>
+              <input
+                type="text"
+                value={formData.invoice_debit_note_field}
+                onChange={(e) => setFormData({ ...formData, invoice_debit_note_field: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Invoice / Debit Note Field"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Receipt Field
+              </label>
+              <input
+                type="text"
+                value={formData.payment_receipt_field}
+                onChange={(e) => setFormData({ ...formData, payment_receipt_field: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter Payment Receipt Field"
               />
             </div>
           </div>

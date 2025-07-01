@@ -60,6 +60,21 @@ export interface Client {
   sales_rep_id?: number;
   salesRep?: string;
   policies?: number;
+  ceilao_ib_file_no?: string;
+  policyholder?: string;
+  vehicle_number?: string;
+  main_class?: string;
+  proposal_form_doc?: string;
+  proposal_form_field?: string;
+  quotation_doc?: string;
+  quotation_field?: string;
+  schedule_doc?: string;
+  cr_copy_doc?: string;
+  invoice_debit_note_doc?: string;
+  invoice_debit_note_field?: string;
+  payment_receipt_doc?: string;
+  payment_receipt_field?: string;
+  nic_br_doc?: string;
 }
 
 interface ApiResponse<T> {
@@ -423,7 +438,11 @@ export const clientService = {
       "stamp_duty", "admin_fees", "road_safety_fee", "policy_fee", "vat_fee", "total_invoice",
       
       // Commission Information
-      "commission_type", "commission_basic", "commission_srcc", "commission_tc"
+      "commission_type", "commission_basic", "commission_srcc", "commission_tc",
+      
+      // New Enhanced Fields
+      "ceilao_ib_file_no", "policyholder", "vehicle_number", "main_class",
+      "proposal_form_field", "quotation_field", "invoice_debit_note_field", "payment_receipt_field"
     ].join(",");
     
     // Sample data for example
@@ -445,7 +464,11 @@ export const clientService = {
       "200", "1500", "1000", "5000", "3250", "43450",
       
       // Commission Information
-      "Standard", "2500", "500", "250"
+      "Standard", "2500", "500", "250",
+      
+      // New Enhanced Fields
+      "CIB001", "John Doe", "ABC-1234", "Comprehensive",
+      "PF001", "QT001", "INV001", "PR001"
     ].join(",");
     
     return `${headers}\n${example}`;

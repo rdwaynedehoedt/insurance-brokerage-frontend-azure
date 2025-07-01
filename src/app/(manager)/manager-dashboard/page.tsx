@@ -106,6 +106,13 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
     { type: 'policy_fee_invoice', url: client.policy_fee_invoice || null, label: 'Policy Fee Invoice' },
     { type: 'vat_fee_debit_note', url: client.vat_fee_debit_note || null, label: 'VAT Debit Note' },
     { type: 'payment_receipt_proof', url: client.payment_receipt_proof || null, label: 'Payment Receipt' },
+    { type: 'proposal_form_doc', url: client.proposal_form_doc || null, label: 'Proposal Form' },
+    { type: 'quotation_doc', url: client.quotation_doc || null, label: 'Quotation' },
+    { type: 'schedule_doc', url: client.schedule_doc || null, label: 'Schedule' },
+    { type: 'cr_copy_doc', url: client.cr_copy_doc || null, label: 'CR Copy' },
+    { type: 'invoice_debit_note_doc', url: client.invoice_debit_note_doc || null, label: 'Invoice / Debit Note' },
+    { type: 'payment_receipt_doc', url: client.payment_receipt_doc || null, label: 'Payment Receipt Doc' },
+    { type: 'nic_br_doc', url: client.nic_br_doc || null, label: 'NIC / BR' },
   ];
 
   return (
@@ -201,6 +208,38 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
               
               <p className="text-sm text-gray-600">Coverage:</p>
               <p className="text-sm font-medium">{client.coverage || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Sum Insured:</p>
+              <p className="text-sm font-medium">{client.sum_insured ? `Rs. ${client.sum_insured.toLocaleString()}` : '-'}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-md font-semibold text-gray-700 border-b pb-2">Enhanced Information</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <p className="text-sm text-gray-600">Ceilao IB File No.:</p>
+              <p className="text-sm font-medium">{client.ceilao_ib_file_no || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Policyholder:</p>
+              <p className="text-sm font-medium">{client.policyholder || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Vehicle Number:</p>
+              <p className="text-sm font-medium">{client.vehicle_number || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Main Class:</p>
+              <p className="text-sm font-medium">{client.main_class || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Proposal Form Field:</p>
+              <p className="text-sm font-medium">{client.proposal_form_field || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Quotation Field:</p>
+              <p className="text-sm font-medium">{client.quotation_field || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Invoice/Debit Note Field:</p>
+              <p className="text-sm font-medium">{client.invoice_debit_note_field || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Payment Receipt Field:</p>
+              <p className="text-sm font-medium">{client.payment_receipt_field || '-'}</p>
             </div>
           </div>
 
@@ -713,6 +752,15 @@ export default function ManagerDashboard() {
                     </div>
                     
                 <div className="flex items-center gap-3 flex-wrap">
+                  {/* Open PDF Converter Web Page */}
+                  <button
+                      onClick={() => window.open('https://ceilao-pdf-gen.vercel.app/', '_blank')}
+                      className="flex items-center gap-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      title="Open PDF Converter"
+                      disabled={isUploading}
+                    >
+                      PDF Converter
+                    </button>
                     {/* CSV Template Download Button */}
                     <button
                       onClick={downloadCsvTemplate}
