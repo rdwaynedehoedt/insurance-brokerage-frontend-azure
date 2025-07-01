@@ -338,7 +338,11 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               documentType,
               filename
             );
-            
+            // Update local formData so the UI and client record are in sync
+            setFormData(prev => ({
+              ...prev,
+              [documentType]: newUrl
+            }));
             console.log(`Updated ${documentType} URL for client ${newClientId}`);
           }
         } catch (error) {
