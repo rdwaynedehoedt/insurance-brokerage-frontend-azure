@@ -294,11 +294,13 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         // Create new client
         const clientId = await clientService.createClient(formData);
         savedClient = { ...formData, id: clientId };
-        
         // Update document URLs for new client if any documents were uploaded
         if (Object.keys(uploadedDocuments).length > 0) {
           try {
             await updateDocumentUrlsForNewClient(clientId, uploadedDocuments);
+            // Fetch the updated client from the backend to get the correct document URLs
+            const updatedClient = await clientService.getClientById(clientId);
+            setFormData(updatedClient);
           } catch (error) {
             console.error('Error updating document URLs:', error);
             // Don't fail the client creation if document URL update fails
