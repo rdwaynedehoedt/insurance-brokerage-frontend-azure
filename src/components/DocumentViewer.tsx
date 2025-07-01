@@ -90,7 +90,19 @@ export default function DocumentViewer({ clientId, documents }: DocumentViewerPr
       window.open(urlToUse, '_blank');
     } catch (error) {
       console.error('Error opening document:', error);
-      alert('Failed to generate document URL. Please try again.');
+      
+      // Try to open the original URL as a fallback
+      try {
+        if (document.url.includes('blob.core.windows.net')) {
+          // For Azure URLs, try to open directly
+          window.open(document.url, '_blank');
+        } else {
+          alert('Failed to generate document URL. Please try again.');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        alert('Failed to open document. Please try again.');
+      }
     } finally {
       setLoadingDoc(null);
     }

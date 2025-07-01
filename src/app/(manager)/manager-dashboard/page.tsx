@@ -515,9 +515,17 @@ export default function ManagerDashboard() {
     await fetchClients();
   };
 
-  const handleViewClientDetails = (client: Client) => {
-    setClientToView(client);
-    setIsDetailsModalOpen(true);
+  const handleViewClientDetails = async (client: Client) => {
+    setIsLoading(true);
+    try {
+      const latestClient = await clientService.getClientById(String(client.id));
+      setClientToView(latestClient);
+      setIsDetailsModalOpen(true);
+    } catch (error) {
+      toast.error('Failed to load client details');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteClient = (client: Client) => {
