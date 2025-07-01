@@ -121,22 +121,9 @@ apiClient.interceptors.request.use(
 export const clientService = {
   async getAllClients(limit?: number, offset?: number, search?: string): Promise<PaginatedClientsResponse> {
     try {
-      let url = '/clients';
-      const params: Record<string, string> = {};
-      
-      if (limit !== undefined) {
-        params.limit = limit.toString();
-      }
-      
-      if (offset !== undefined) {
-        params.offset = offset.toString();
-      }
-      
-      if (search && search.trim() !== '') {
-        params.search = search.trim();
-      }
-      
-      const response = await apiClient.get<ApiResponse<Client[]>>(url, { params });
+      const response = await apiClient.get<ApiResponse<Client[]>>('/clients', {
+        params: { limit, offset, search }
+      });
       
       // For backward compatibility, if the backend doesn't provide total count yet
       // We'll just use the length of the returned array
@@ -144,8 +131,24 @@ export const clientService = {
         clients: response.data.data,
         totalCount: (response.data as any).totalCount || response.data.data.length
       };
-    } catch (error) {
-      console.error('Error fetching clients:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error fetching clients:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error fetching clients:', error.message);
+        } else {
+          console.error('Unknown error object fetching clients:', error);
+        }
+      } else {
+        console.error('Non-object error fetching clients:', typeof error, error);
+      }
       throw error;
     }
   },
@@ -154,8 +157,24 @@ export const clientService = {
     try {
       const response = await apiClient.get<ApiResponse<Client>>(`/clients/${id}`);
       return response.data.data;
-    } catch (error) {
-      console.error(`Error fetching client ${id}:`, error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error(`API error fetching client ${id}:`, {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error(`Error fetching client ${id}:`, error.message);
+        } else {
+          console.error(`Unknown error object fetching client ${id}:`, error);
+        }
+      } else {
+        console.error(`Non-object error fetching client ${id}:`, typeof error, error);
+      }
       throw error;
     }
   },
@@ -187,8 +206,24 @@ export const clientService = {
       const response = await apiClient.post<ApiResponse<{id: string}>>('/clients', cleanedData);
       console.log('Create client response:', JSON.stringify(response.data, null, 2));
       return response.data.data.id;
-    } catch (error) {
-      console.error('Error creating client:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error creating client:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error creating client:', error.message);
+        } else {
+          console.error('Unknown error object creating client:', error);
+        }
+      } else {
+        console.error('Non-object error creating client:', typeof error, error);
+      }
       throw error;
     }
   },
@@ -288,7 +323,23 @@ export const clientService = {
         }
       }
     } catch (error: any) {
-      console.error(`Error updating client ${id}:`, error);
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error(`API error updating client ${id}:`, {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error(`Error updating client ${id}:`, error.message);
+        } else {
+          console.error(`Unknown error object updating client ${id}:`, error);
+        }
+      } else {
+        console.error(`Non-object error updating client ${id}:`, typeof error, error);
+      }
       // Error was already handled in the inner try-catch
       throw error;
     }
@@ -297,8 +348,24 @@ export const clientService = {
   async deleteClient(id: string): Promise<void> {
     try {
       await apiClient.delete(`/clients/${id}`);
-    } catch (error) {
-      console.error(`Error deleting client ${id}:`, error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error(`API error deleting client ${id}:`, {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error(`Error deleting client ${id}:`, error.message);
+        } else {
+          console.error(`Unknown error object deleting client ${id}:`, error);
+        }
+      } else {
+        console.error(`Non-object error deleting client ${id}:`, typeof error, error);
+      }
       throw error;
     }
   },
@@ -307,8 +374,24 @@ export const clientService = {
     try {
       const response = await apiClient.post<ApiResponse<Client[]>>('/clients/search', criteria);
       return response.data.data;
-    } catch (error) {
-      console.error('Error searching clients:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error searching clients:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error searching clients:', error.message);
+        } else {
+          console.error('Unknown error object searching clients:', error);
+        }
+      } else {
+        console.error('Non-object error searching clients:', typeof error, error);
+      }
       throw error;
     }
   },
@@ -317,8 +400,24 @@ export const clientService = {
     try {
       const response = await apiClient.get<ApiResponse<Client[]>>(`/clients/sales/${salesRepId}`);
       return response.data.data;
-    } catch (error) {
-      console.error(`Error fetching clients for sales rep ${salesRepId}:`, error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error(`API error fetching clients for sales rep ${salesRepId}:`, {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error(`Error fetching clients for sales rep ${salesRepId}:`, error.message);
+        } else {
+          console.error(`Unknown error object fetching clients for sales rep ${salesRepId}:`, error);
+        }
+      } else {
+        console.error(`Non-object error fetching clients for sales rep ${salesRepId}:`, typeof error, error);
+      }
       throw error;
     }
   },
@@ -412,8 +511,24 @@ export const clientService = {
         // Send the request
         xhr.send(formData);
       });
-    } catch (error) {
-      console.error('Error importing clients from CSV:', error);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error importing clients from CSV:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error importing clients from CSV:', error.message);
+        } else {
+          console.error('Unknown error object importing clients from CSV:', error);
+        }
+      } else {
+        console.error('Non-object error importing clients from CSV:', typeof error, error);
+      }
       throw error;
     }
   },
@@ -472,5 +587,81 @@ export const clientService = {
     ].join(",");
     
     return `${headers}\n${example}`;
+  },
+
+  // Method to download CSV template from backend
+  async downloadCsvTemplate(): Promise<void> {
+    try {
+      const response = await apiClient.get('/clients/csv-template', {
+        responseType: 'blob'
+      });
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(response.data instanceof Blob ? response.data : new Blob([response.data as BlobPart]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'client_template.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error downloading CSV template:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error downloading CSV template:', error.message);
+        } else {
+          console.error('Unknown error object downloading CSV template:', error);
+        }
+      } else {
+        console.error('Non-object error downloading CSV template:', typeof error, error);
+      }
+      throw error;
+    }
+  },
+
+  // Method to download CSV template with sample data from backend
+  async downloadCsvTemplateWithSample(): Promise<void> {
+    try {
+      const response = await apiClient.get('/clients/csv-template-with-sample', {
+        responseType: 'blob'
+      });
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(response.data instanceof Blob ? response.data : new Blob([response.data as BlobPart]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'client_template_with_sample.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      // Improved error logging
+      if (error && typeof error === 'object') {
+        if (error.response) {
+          console.error('API error downloading CSV template with sample:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data,
+            url: error.config?.url
+          });
+        } else if (error.message) {
+          console.error('Error downloading CSV template with sample:', error.message);
+        } else {
+          console.error('Unknown error object downloading CSV template with sample:', error);
+        }
+      } else {
+        console.error('Non-object error downloading CSV template with sample:', typeof error, error);
+      }
+      throw error;
+    }
   }
 }; 

@@ -60,8 +60,19 @@ apiClient.interceptors.response.use(
       // Server responded with a status code outside of 2xx range
       console.error(`Response error: ${error.response.status} ${error.response.statusText} for ${error.config.method?.toUpperCase()} ${error.config.url}`, {
         data: error.response.data,
-        headers: error.response.headers
+        headers: error.response.headers,
+        contentType: error.response.headers['content-type']
       });
+      
+      // Check if response is not JSON (which might be causing the 'V' error)
+      const contentType = error.response.headers['content-type'];
+      if (contentType && !contentType.includes('application/json')) {
+        console.error('Non-JSON response detected:', {
+          contentType,
+          data: typeof error.response.data === 'string' ? error.response.data.substring(0, 100) : error.response.data,
+          dataType: typeof error.response.data
+        });
+      }
       
       // Handle authorization errors (401, 403)
       if (error.response.status === 401 || error.response.status === 403) {
