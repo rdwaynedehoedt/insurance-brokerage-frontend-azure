@@ -713,6 +713,17 @@ export default function ManagerDashboard() {
                     </div>
                     
                 <div className="flex items-center gap-3 flex-wrap">
+                    {/* PDF Generator Button */}
+                    <button
+                      onClick={() => window.open('https://ceilao-pdf-gen.vercel.app/', '_blank')}
+                      className="flex items-center gap-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      title="Open PDF Generator"
+                      disabled={isUploading}
+                    >
+                      <Download className="w-4 h-4" />
+                      PDF Generator
+                    </button>
+                    
                     {/* CSV Template Download Button */}
                     <button
                       onClick={downloadCsvTemplate}

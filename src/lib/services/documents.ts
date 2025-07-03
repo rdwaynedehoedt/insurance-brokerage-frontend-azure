@@ -107,5 +107,9 @@ export const documentService = {
       console.error('Error deleting document:', error);
       throw error;
     }
+  },
+
+  async moveDocuments(tempId: string, realClientId: string) {
+    return apiClient.post(`/documents/move-temp/${tempId}/${realClientId}`);
   }
 }; 

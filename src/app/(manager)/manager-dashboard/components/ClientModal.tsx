@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { clientService, Client as ClientType } from '@/lib/services/clients';
 import { toast } from 'react-hot-toast';
 import DocumentUpload from '@/components/DocumentUpload';
+import { v4 as uuidv4 } from 'uuid';
+import { documentService } from '@/lib/services/documents';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -85,6 +87,7 @@ const defaultClientState: Partial<ClientType> = {
 export default function ClientModal({ isOpen, onClose, client, onClientSaved }: ClientModalProps) {
   const [formData, setFormData] = useState<Partial<ClientType>>({ ...defaultClientState });
   const [errors, setErrors] = useState<ClientErrors>({});
+  const [tempClientId, setTempClientId] = useState(() => uuidv4());
 
   useEffect(() => {
     if (client) {
@@ -98,6 +101,10 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
       setFormData({ ...defaultClientState });
     }
   }, [client, isOpen]);
+
+  useEffect(() => {
+    if (!client) setTempClientId(uuidv4());
+  }, [isOpen, client]);
 
   const validateForm = () => {
     const newErrors: ClientErrors = {};
@@ -203,7 +210,9 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           });
         } else {
           // Create new client
-          const newClientId = await clientService.createClient(clientData as ClientType);
+          const response = await clientService.createClient(clientData as ClientType) as { id: string } | string;
+          const newClientId = typeof response === 'string' ? response : response.id;
+          await documentService.moveDocuments(tempClientId, newClientId);
           toast.success(`Client added successfully`, {
             duration: 4000,
             position: 'top-center',
@@ -293,7 +302,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="nic_proof"
               label="NIC Proof"
               existingUrl={formData.nic_proof as string}
@@ -303,7 +312,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="dob_proof"
               label="DOB Proof"
               existingUrl={formData.dob_proof as string}
@@ -313,7 +322,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="business_registration"
               label="Business Registration"
               existingUrl={formData.business_registration as string}
@@ -323,7 +332,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="svat_proof"
               label="SVAT Proof"
               existingUrl={formData.svat_proof as string}
@@ -333,7 +342,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="vat_proof"
               label="VAT Proof"
               existingUrl={formData.vat_proof as string}
@@ -343,7 +352,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="coverage_proof"
               label="Coverage Proof"
               existingUrl={formData.coverage_proof as string}
@@ -353,7 +362,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="sum_insured_proof"
               label="Sum Insured Proof"
               existingUrl={formData.sum_insured_proof as string}
@@ -363,7 +372,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="policy_fee_invoice"
               label="Policy Fee Invoice"
               existingUrl={formData.policy_fee_invoice as string}
@@ -373,7 +382,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="vat_fee_debit_note"
               label="VAT Debit Note"
               existingUrl={formData.vat_fee_debit_note as string}
@@ -383,7 +392,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client ? String(formData.id || '') : tempClientId}
               documentType="payment_receipt_proof"
               label="Payment Receipt"
               existingUrl={formData.payment_receipt_proof as string}
