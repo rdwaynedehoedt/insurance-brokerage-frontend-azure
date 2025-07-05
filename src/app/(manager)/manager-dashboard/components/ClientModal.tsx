@@ -181,6 +181,23 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     console.log(`File stored for later upload: ${documentType}`);
   };
 
+  // Handle document deletion for new clients
+  const handleDocumentDelete = (documentType: string) => {
+    // Remove the file from pendingFiles if it exists
+    if (pendingFiles[documentType]) {
+      const newPendingFiles = { ...pendingFiles };
+      delete newPendingFiles[documentType];
+      setPendingFiles(newPendingFiles);
+      console.log(`File removed from pending uploads: ${documentType}`);
+    }
+    
+    // Clear the field in formData
+    setFormData(prev => ({
+      ...prev,
+      [documentType]: ''
+    }));
+  };
+
   // Handle document URL updates - for existing clients
   const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
     // Only used for existing clients
@@ -355,16 +372,17 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto relative">
+        <form 
+          onSubmit={handleSubmit} 
+          className={`p-6 space-y-6 max-h-[80vh] overflow-y-auto relative ${isSubmitting ? 'opacity-80 pointer-events-none' : ''}`}
+        >
           {isSubmitting && (
-            <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center z-10">
-              <div className="bg-white p-4 rounded-lg shadow-lg flex items-center">
-                <svg className="animate-spin h-5 w-5 mr-3 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="text-orange-600 font-medium">{client ? 'Updating client...' : 'Adding new client...'}</span>
-              </div>
+            <div className="fixed top-4 right-4 bg-white p-3 rounded-lg shadow-lg flex items-center z-20">
+              <svg className="animate-spin h-5 w-5 mr-3 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-orange-600 font-medium">{client ? 'Updating client...' : 'Adding new client...'}</span>
             </div>
           )}
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
@@ -376,7 +394,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.nic_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, nic_proof: '' })}
+              onDelete={() => handleDocumentDelete('nic_proof')}
               readOnly={false}
             />
 
@@ -387,7 +405,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.dob_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, dob_proof: '' })}
+              onDelete={() => handleDocumentDelete('dob_proof')}
               readOnly={false}
             />
 
@@ -398,7 +416,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.business_registration as string}
               onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, business_registration: '' })}
+              onDelete={() => handleDocumentDelete('business_registration')}
               readOnly={false}
             />
 
@@ -409,7 +427,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.svat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, svat_proof: '' })}
+              onDelete={() => handleDocumentDelete('svat_proof')}
               readOnly={false}
             />
 
@@ -420,7 +438,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.vat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, vat_proof: '' })}
+              onDelete={() => handleDocumentDelete('vat_proof')}
               readOnly={false}
             />
             
@@ -431,7 +449,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.coverage_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
+              onDelete={() => handleDocumentDelete('coverage_proof')}
               readOnly={false}
             />
             
@@ -442,7 +460,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.sum_insured_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
+              onDelete={() => handleDocumentDelete('sum_insured_proof')}
               readOnly={false}
             />
             
@@ -453,7 +471,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.policy_fee_invoice as string}
               onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
+              onDelete={() => handleDocumentDelete('policy_fee_invoice')}
               readOnly={false}
             />
             
@@ -464,7 +482,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.vat_fee_debit_note as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
+              onDelete={() => handleDocumentDelete('vat_fee_debit_note')}
               readOnly={false}
             />
             
@@ -475,7 +493,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               existingUrl={formData.payment_receipt_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
+              onDelete={() => handleDocumentDelete('payment_receipt_proof')}
               readOnly={false}
             />
           </div>
@@ -491,7 +509,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('policyholder_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, policyholder_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, policyholder_doc: '' })}
+              onDelete={() => handleDocumentDelete('policyholder_doc')}
               readOnly={false}
             />
             
@@ -504,7 +522,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('vehicle_number_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, vehicle_number_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, vehicle_number_doc: '' })}
+              onDelete={() => handleDocumentDelete('vehicle_number_doc')}
               readOnly={false}
             />
             
@@ -517,7 +535,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('proposal_form_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, proposal_form_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, proposal_form_doc: '' })}
+              onDelete={() => handleDocumentDelete('proposal_form_doc')}
               readOnly={false}
             />
             
@@ -530,7 +548,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('quotation_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, quotation_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, quotation_doc: '' })}
+              onDelete={() => handleDocumentDelete('quotation_doc')}
               readOnly={false}
             />
             
@@ -543,7 +561,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('cr_copy_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, cr_copy_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, cr_copy_doc: '' })}
+              onDelete={() => handleDocumentDelete('cr_copy_doc')}
               readOnly={false}
             />
             
@@ -556,7 +574,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('schedule_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, schedule_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, schedule_doc: '' })}
+              onDelete={() => handleDocumentDelete('schedule_doc')}
               readOnly={false}
             />
             
@@ -569,7 +587,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('invoice_debit_note_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, invoice_debit_note_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, invoice_debit_note_doc: '' })}
+              onDelete={() => handleDocumentDelete('invoice_debit_note_doc')}
               readOnly={false}
             />
             
@@ -582,7 +600,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('payment_receipt_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, payment_receipt_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, payment_receipt_doc: '' })}
+              onDelete={() => handleDocumentDelete('payment_receipt_doc')}
               readOnly={false}
             />
             
@@ -595,7 +613,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               onDocUploadSuccess={(url) => handleDocumentUpload('nic_br_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, nic_br_text: text })}
               onFileSelected={handleFileSelected}
-              onDelete={() => setFormData({ ...formData, nic_br_doc: '' })}
+              onDelete={() => handleDocumentDelete('nic_br_doc')}
               readOnly={false}
             />
           </div>
@@ -1207,6 +1225,14 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           </div>
 
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
+            {isSubmitting && (
+              <div className="flex-1 flex items-center">
+                <div className="h-1 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-600 animate-pulse rounded-full" style={{ width: '100%' }}></div>
+                </div>
+                <span className="ml-3 text-sm text-orange-600 whitespace-nowrap">Processing...</span>
+              </div>
+            )}
             <button
               type="button"
               onClick={handleClose}

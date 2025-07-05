@@ -158,19 +158,30 @@ const DocumentUpload = ({
   
   // Handle document deletion
   const handleDelete = async () => {
-    if (!existingUrl || readOnly) return;
+    if (readOnly) return;
     
     try {
       setIsUploading(true);
-      await documentService.deleteDocument(clientId, documentType, existingUrl);
       
+      // Case 1: Document is already uploaded (existingUrl exists)
+      if (existingUrl && clientId) {
+        await documentService.deleteDocument(clientId, documentType, existingUrl);
+        toast.success('Document deleted successfully');
+      }
+      
+      // Case 2: Document is selected but not uploaded yet (for new clients)
+      // We don't need to call any API, just clear the local state and notify parent
+      
+      // Clear preview and file type in both cases
+      setPreviewUrl(null);
+      setFileType(null);
+      setSelectedFile(null);
+      
+      // Notify parent component in both cases
       if (onDelete) {
         onDelete();
       }
       
-      setPreviewUrl(null);
-      setFileType(null);
-      toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Failed to delete document');
