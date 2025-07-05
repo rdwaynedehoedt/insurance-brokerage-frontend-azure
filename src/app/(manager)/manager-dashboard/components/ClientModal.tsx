@@ -185,24 +185,24 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
   const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
     // Only used for existing clients
     if (client?.id) {
-      // Ensure URL doesn't have trailing or leading whitespace
-      const trimmedUrl = url.trim();
+    // Ensure URL doesn't have trailing or leading whitespace
+    const trimmedUrl = url.trim();
       
       console.log(`ClientModal: Document uploaded for ${documentType}, URL=${trimmedUrl}`);
-      
-      // Check if the URL is a long Azure Blob Storage URL with SAS token
-      // These can cause issues when sent in requests due to their length
-      if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
+    
+    // Check if the URL is a long Azure Blob Storage URL with SAS token
+    // These can cause issues when sent in requests due to their length
+    if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
         console.log(`ClientModal: Truncating long Azure URL for ${documentType}`);
-        
-        // Just store the URL without the SAS token for database storage
-        // The secure document endpoint will handle token generation when needed
-        const urlParts = trimmedUrl.split('?');
-        const baseUrl = urlParts[0];
-        
-        setFormData({ ...formData, [documentType]: baseUrl });
-      } else {
-        setFormData({ ...formData, [documentType]: trimmedUrl });
+      
+      // Just store the URL without the SAS token for database storage
+      // The secure document endpoint will handle token generation when needed
+      const urlParts = trimmedUrl.split('?');
+      const baseUrl = urlParts[0];
+      
+      setFormData({ ...formData, [documentType]: baseUrl });
+    } else {
+      setFormData({ ...formData, [documentType]: trimmedUrl });
       }
     }
   };
