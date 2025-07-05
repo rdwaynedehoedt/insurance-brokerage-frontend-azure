@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Upload, X, FileText, Image, Check, Loader2 } from 'lucide-react';
 import { documentService } from '@/lib/services/documents';
 import { toast } from 'react-hot-toast';
+import { processFileForUpload } from '@/lib/utils/imageCompression';
 
 interface DocumentUploadProps {
   clientId: string;
@@ -33,6 +34,7 @@ const DocumentUpload = ({
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   
   // Determine file type from URL extension
   const getFileTypeFromUrl = (url: string): 'image' | 'pdf' | 'other' => {
@@ -96,6 +98,7 @@ const DocumentUpload = ({
     
     try {
       setIsUploading(true);
+      setUploadProgress(0);
       
       // Create preview
       const reader = new FileReader();
@@ -105,16 +108,30 @@ const DocumentUpload = ({
       };
       reader.readAsDataURL(file);
       
-      // Store the selected file
-      setSelectedFile(file);
+      // Process file (compress if it's an image)
+      console.log('Processing file for upload:', file.name);
+      const processedFile = await processFileForUpload(file);
+      console.log(`File processed: ${file.name} - Original size: ${(file.size / 1024).toFixed(2)}KB, Processed size: ${(processedFile.size / 1024).toFixed(2)}KB`);
+      
+      // Store the processed file
+      setSelectedFile(processedFile);
       
       // If we have a client ID, upload immediately
       // Otherwise, store the file for later upload
       if (clientId) {
         console.log(`DocumentUpload: Uploading file for clientId=${clientId}`);
         
-        // Upload to server
-        const result = await documentService.uploadDocument(clientId, documentType, file);
+        // Upload to server with progress tracking
+        const result = await documentService.uploadDocument(
+          clientId, 
+          documentType, 
+          processedFile,
+          (progress) => {
+            setUploadProgress(progress);
+            console.log(`Upload progress: ${progress}%`);
+          }
+        );
+        
         console.log(`DocumentUpload: Upload successful, URL=${result.url}`);
         
         const documentUrl = result.url;
@@ -123,7 +140,7 @@ const DocumentUpload = ({
       } else {
         // For new clients, just store the file and notify parent
         if (onFileSelected) {
-          onFileSelected(documentType, file);
+          onFileSelected(documentType, processedFile);
           toast.success('File selected and ready for upload');
         }
       }
@@ -135,6 +152,7 @@ const DocumentUpload = ({
       setSelectedFile(null);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
   
@@ -183,6 +201,12 @@ const DocumentUpload = ({
             </div>
             
             <div className="flex items-center space-x-2">
+              {isUploading && (
+                <div className="flex items-center">
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin text-blue-500" />
+                  <span className="text-xs text-blue-500">{uploadProgress}%</span>
+                </div>
+              )}
               
               {!readOnly && (
                 <button
