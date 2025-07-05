@@ -431,6 +431,7 @@ export const clientService = {
     const headers = [
       // Basic Information
       "customer_type", "product", "insurance_provider", "client_name", "introducer_code", "branch",
+      "ceilao_ib_file_no", "main_class", "insurer",
       
       // Contact Information
       "mobile_no", "telephone", "email", "contact_person", "social_media",
@@ -444,15 +445,24 @@ export const clientService = {
       // Financial Information
       "sum_insured", "basic_premium", "srcc_premium", "tc_premium", "net_premium", 
       "stamp_duty", "admin_fees", "road_safety_fee", "policy_fee", "vat_fee", "total_invoice",
+      "debit_note", "payment_receipt",
       
       // Commission Information
-      "commission_type", "commission_basic", "commission_srcc", "commission_tc"
+      "commission_type", "commission_basic", "commission_srcc", "commission_tc",
+      
+      // Text fields for documents
+      "policyholder_text", "vehicle_number_text", "proposal_form_text", "quotation_text",
+      "cr_copy_text", "schedule_text", "invoice_debit_note_text", "payment_receipt_text", "nic_br_text"
+      
+      // Document fields are not included as they need to be uploaded separately
+      // and can't be imported via CSV
     ].join(",");
     
     // Sample data for example
     const example = [
       // Basic Information
       "Individual", "Motor Insurance", "ABC Insurance", "John Doe", "INT123", "Colombo",
+      "CIB-2023-001", "Motor", "XYZ Insurance",
       
       // Contact Information
       "0777123456", "0112345678", "john@example.com", "John Doe", "@johndoe",
@@ -466,9 +476,14 @@ export const clientService = {
       // Financial Information
       "1000000", "25000", "5000", "2500", "32500", 
       "200", "1500", "1000", "5000", "3250", "43450",
+      "DN-12345", "PR-67890",
       
       // Commission Information
-      "Standard", "2500", "500", "250"
+      "Standard", "2500", "500", "250",
+      
+      // Text fields for documents
+      "John Doe", "ABC-1234", "Proposal form details", "Quotation details",
+      "CR copy details", "Schedule details", "Invoice details", "Payment receipt details", "NIC details"
     ].join(",");
     
     return `${headers}\n${example}`;
