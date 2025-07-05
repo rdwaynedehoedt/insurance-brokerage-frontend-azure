@@ -110,6 +110,8 @@ const defaultClientState: Partial<ClientType> = {
 export default function ClientModal({ isOpen, onClose, client, onClientSaved }: ClientModalProps) {
   const [formData, setFormData] = useState<Partial<ClientType>>({ ...defaultClientState });
   const [errors, setErrors] = useState<ClientErrors>({});
+  const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (client) {
@@ -121,6 +123,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     } else {
       // Reset to empty state when adding a new client
       setFormData({ ...defaultClientState });
+      setPendingFiles({}); // Clear pending files
     }
   }, [client, isOpen]);
 
@@ -169,26 +172,38 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle document URL updates
+  // Store file for later upload after client creation
+  const handleFileSelected = (documentType: string, file: File) => {
+    setPendingFiles(prev => ({
+      ...prev,
+      [documentType]: file
+    }));
+    console.log(`File stored for later upload: ${documentType}`);
+  };
+
+  // Handle document URL updates - for existing clients
   const handleDocumentUpload = (documentType: keyof ClientType, url: string) => {
-    // Ensure URL doesn't have trailing or leading whitespace
-    const trimmedUrl = url.trim();
-    
-    console.log(`ClientModal: Document uploaded for ${documentType}, URL=${trimmedUrl}`);
-    
-    // Check if the URL is a long Azure Blob Storage URL with SAS token
-    // These can cause issues when sent in requests due to their length
-    if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
-      console.log(`ClientModal: Truncating long Azure URL for ${documentType}`);
+    // Only used for existing clients
+    if (client?.id) {
+      // Ensure URL doesn't have trailing or leading whitespace
+      const trimmedUrl = url.trim();
       
-      // Just store the URL without the SAS token for database storage
-      // The secure document endpoint will handle token generation when needed
-      const urlParts = trimmedUrl.split('?');
-      const baseUrl = urlParts[0];
+      console.log(`ClientModal: Document uploaded for ${documentType}, URL=${trimmedUrl}`);
       
-      setFormData({ ...formData, [documentType]: baseUrl });
-    } else {
-      setFormData({ ...formData, [documentType]: trimmedUrl });
+      // Check if the URL is a long Azure Blob Storage URL with SAS token
+      // These can cause issues when sent in requests due to their length
+      if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
+        console.log(`ClientModal: Truncating long Azure URL for ${documentType}`);
+        
+        // Just store the URL without the SAS token for database storage
+        // The secure document endpoint will handle token generation when needed
+        const urlParts = trimmedUrl.split('?');
+        const baseUrl = urlParts[0];
+        
+        setFormData({ ...formData, [documentType]: baseUrl });
+      } else {
+        setFormData({ ...formData, [documentType]: trimmedUrl });
+      }
     }
   };
 
@@ -196,7 +211,31 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
   const handleClose = () => {
     setFormData({ ...defaultClientState });
     setErrors({});
+    setPendingFiles({});
     onClose();
+  };
+
+  // Upload all pending files for a new client
+  const uploadPendingFiles = async (clientId: string) => {
+    const documentUrls: Record<string, string> = {};
+    
+    for (const [documentType, file] of Object.entries(pendingFiles)) {
+      try {
+        console.log(`Uploading ${documentType} for client ${clientId}`);
+        const result = await documentService.uploadDocument(clientId, documentType, file);
+        documentUrls[documentType] = result.url;
+      } catch (error) {
+        console.error(`Error uploading ${documentType}:`, error);
+      }
+    }
+    
+    if (Object.keys(documentUrls).length > 0) {
+      // Update client with document URLs
+      await clientService.updateClient(clientId, documentUrls);
+      console.log('Client updated with document URLs');
+    }
+    
+    return documentUrls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,6 +243,8 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     
     if (validateForm()) {
       try {
+        setIsSubmitting(true);
+        
         // Create a copy of formData without any modifications
         const clientData = { ...formData };
         
@@ -224,54 +265,24 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         if (client) {
           // Update existing client
           await clientService.updateClient(client.id as string, clientData);
+          
+          // Upload any pending files for existing client
+          if (Object.keys(pendingFiles).length > 0) {
+            await uploadPendingFiles(client.id as string);
+          }
+          
           toast.success('Client updated successfully', {
             duration: 4000,
             position: 'top-center',
           });
         } else {
-          // Create new client
+          // Create new client first
           const newClientId = await clientService.createClient(clientData as ClientType);
           console.log(`ClientModal: New client created with ID ${newClientId}`);
           
-          // Check if there are any documents that need to be migrated from 'new-client' to the actual client ID
-          const documentFields = Object.entries(clientData)
-            .filter(([key, value]) => 
-              typeof value === 'string' && 
-              value && 
-              (value.includes('new-client') || value.includes('/temp-')) &&
-              (key.includes('_doc') || key.includes('_proof'))
-            )
-            .reduce((acc, [key, value]) => {
-              acc[key] = value as string;
-              return acc;
-            }, {} as Record<string, string>);
-          
-          if (Object.keys(documentFields).length > 0) {
-            console.log(`ClientModal: Found ${Object.keys(documentFields).length} documents to migrate:`, documentFields);
-            
-            try {
-              // Migrate documents from 'new-client' to the actual client ID
-              console.log(`ClientModal: Starting document migration for client ${newClientId}`);
-              const updatedUrls = await documentService.migrateDocuments(newClientId, documentFields);
-              
-              // If there are updated URLs, update the client with the new URLs
-              if (Object.keys(updatedUrls).length > 0) {
-                console.log('ClientModal: Documents migrated successfully, updating client with new URLs:', updatedUrls);
-                await clientService.updateClient(newClientId, updatedUrls);
-                console.log('ClientModal: Client updated with new document URLs');
-              } else {
-                console.log('ClientModal: No documents were migrated');
-              }
-            } catch (migrationError) {
-              console.error('ClientModal: Error migrating documents:', migrationError);
-              // Don't fail the whole operation if document migration fails
-              toast.error('Client created but document migration failed. Please update documents manually.', {
-                duration: 6000,
-                position: 'top-center',
-              });
-            }
-          } else {
-            console.log('ClientModal: No documents to migrate');
+          // Then upload all pending files directly to the new client ID
+          if (Object.keys(pendingFiles).length > 0) {
+            await uploadPendingFiles(newClientId);
           }
           
           toast.success(`Client added successfully`, {
@@ -283,6 +294,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         // Reset form data after successful submission
         setFormData({ ...defaultClientState });
         setErrors({});
+        setPendingFiles({});
         
         // Call the callback function if provided
         if (onClientSaved) {
@@ -298,47 +310,21 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         let errorMessage = 'Failed to save client';
         let actionRequired = '';
         
-        // Check for specific database error patterns
-        if (error.message) {
-          // Clean up complex SQL error messages to make them more user-friendly
-          if (error.message.includes('Database error') || error.message.includes('SQL')) {
-            errorMessage = 'Database error occurred while saving client';
-            
-            // Check for common issues
-            if (error.message.includes('duplicate')) {
-              errorMessage = 'This client already exists in the database';
-              actionRequired = 'Please check the client ID or details.';
-            } else if (error.message.includes('updated_at')) {
-              errorMessage = 'Error with date fields';
-              actionRequired = 'Please try again or contact support.';
-            } else if (error.message.includes('violates') || error.message.includes('constraint')) {
-              errorMessage = 'Invalid data provided for this client';
-              actionRequired = 'Please check all required fields.';
-            }
-          } else if (error.message.includes('Network error')) {
-            errorMessage = 'Connection issue with the server';
-            actionRequired = 'Please check your internet connection and try again.';
-          } else {
-            // Use the original error message
-            errorMessage = error.message;
-          }
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
         }
         
-        // Add action required if available
-        if (actionRequired) {
-          errorMessage = `${errorMessage}. ${actionRequired}`;
+        if (error.response?.status === 409) {
+          actionRequired = 'Please try a different email address.';
         }
         
-        toast.error(errorMessage, {
-          duration: 6000, // Show longer for errors
+        toast.error(`${errorMessage}${actionRequired ? ' ' + actionRequired : ''}`, {
+          duration: 6000,
           position: 'top-center',
         });
+      } finally {
+        setIsSubmitting(false);
       }
-    } else {
-      toast.error('Please fix the form errors before submitting', {
-        duration: 4000,
-        position: 'top-center',
-      });
     }
   };
 
@@ -363,101 +349,111 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="nic_proof"
               label="NIC Proof"
               existingUrl={formData.nic_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('nic_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, nic_proof: '' })}
               readOnly={false}
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="dob_proof"
               label="DOB Proof"
               existingUrl={formData.dob_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('dob_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, dob_proof: '' })}
               readOnly={false}
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="business_registration"
               label="Business Registration"
               existingUrl={formData.business_registration as string}
               onUploadSuccess={(url) => handleDocumentUpload('business_registration', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, business_registration: '' })}
               readOnly={false}
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="svat_proof"
               label="SVAT Proof"
               existingUrl={formData.svat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('svat_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, svat_proof: '' })}
               readOnly={false}
             />
 
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="vat_proof"
               label="VAT Proof"
               existingUrl={formData.vat_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, vat_proof: '' })}
               readOnly={false}
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="coverage_proof"
               label="Coverage Proof"
               existingUrl={formData.coverage_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('coverage_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, coverage_proof: '' })}
               readOnly={false}
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="sum_insured_proof"
               label="Sum Insured Proof"
               existingUrl={formData.sum_insured_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('sum_insured_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, sum_insured_proof: '' })}
               readOnly={false}
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="policy_fee_invoice"
               label="Policy Fee Invoice"
               existingUrl={formData.policy_fee_invoice as string}
               onUploadSuccess={(url) => handleDocumentUpload('policy_fee_invoice', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, policy_fee_invoice: '' })}
               readOnly={false}
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="vat_fee_debit_note"
               label="VAT Debit Note"
               existingUrl={formData.vat_fee_debit_note as string}
               onUploadSuccess={(url) => handleDocumentUpload('vat_fee_debit_note', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, vat_fee_debit_note: '' })}
               readOnly={false}
             />
             
             <DocumentUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="payment_receipt_proof"
               label="Payment Receipt"
               existingUrl={formData.payment_receipt_proof as string}
               onUploadSuccess={(url) => handleDocumentUpload('payment_receipt_proof', url)}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, payment_receipt_proof: '' })}
               readOnly={false}
             />
@@ -466,109 +462,118 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Documents with Text</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="policyholder_doc"
               label="Policyholder"
               existingDocUrl={formData.policyholder_doc as string}
               existingText={formData.policyholder_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('policyholder_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, policyholder_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, policyholder_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="vehicle_number_doc"
               label="Vehicle Number"
               existingDocUrl={formData.vehicle_number_doc as string}
               existingText={formData.vehicle_number_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('vehicle_number_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, vehicle_number_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, vehicle_number_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="proposal_form_doc"
               label="Proposal Form"
               existingDocUrl={formData.proposal_form_doc as string}
               existingText={formData.proposal_form_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('proposal_form_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, proposal_form_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, proposal_form_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="quotation_doc"
               label="Quotation"
               existingDocUrl={formData.quotation_doc as string}
               existingText={formData.quotation_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('quotation_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, quotation_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, quotation_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="cr_copy_doc"
               label="CR Copy"
               existingDocUrl={formData.cr_copy_doc as string}
               existingText={formData.cr_copy_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('cr_copy_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, cr_copy_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, cr_copy_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="schedule_doc"
               label="Schedule"
               existingDocUrl={formData.schedule_doc as string}
               existingText={formData.schedule_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('schedule_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, schedule_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, schedule_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="invoice_debit_note_doc"
               label="Invoice / Debit Note"
               existingDocUrl={formData.invoice_debit_note_doc as string}
               existingText={formData.invoice_debit_note_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('invoice_debit_note_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, invoice_debit_note_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, invoice_debit_note_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="payment_receipt_doc"
               label="Payment Receipt"
               existingDocUrl={formData.payment_receipt_doc as string}
               existingText={formData.payment_receipt_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('payment_receipt_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, payment_receipt_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, payment_receipt_doc: '' })}
               readOnly={false}
             />
             
             <DocumentWithTextUpload
-              clientId={formData.id || client?.id || 'new-client'}
+              clientId={client?.id || ''}
               documentType="nic_br_doc"
               label="NIC / BR"
               existingDocUrl={formData.nic_br_doc as string}
               existingText={formData.nic_br_text as string}
               onDocUploadSuccess={(url) => handleDocumentUpload('nic_br_doc', url)}
               onTextChange={(text) => setFormData({ ...formData, nic_br_text: text })}
+              onFileSelected={handleFileSelected}
               onDelete={() => setFormData({ ...formData, nic_br_doc: '' })}
               readOnly={false}
             />

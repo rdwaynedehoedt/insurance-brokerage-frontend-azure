@@ -110,7 +110,7 @@ export const documentService = {
   },
 
   /**
-   * Migrate documents from 'new-client' to the actual client ID
+   * Migrate documents from temporary folders to the actual client ID
    * This is used when a new client is created and documents were uploaded before the client was saved
    */
   async migrateDocuments(
@@ -118,10 +118,9 @@ export const documentService = {
     documentUrls: Record<string, string>
   ): Promise<Record<string, string>> {
     try {
-      // Filter out document URLs that don't contain 'new-client' or 'temp-'
+      // Filter out document URLs that don't contain temporary IDs
       const documentsToMigrate = Object.entries(documentUrls)
-        .filter(([_, url]) => url && typeof url === 'string' && 
-          (url.includes('new-client') || url.includes('/temp-')))
+        .filter(([_, url]) => url && typeof url === 'string' && url.includes('/temp-'))
         .reduce((acc, [key, url]) => {
           acc[key] = url;
           return acc;
@@ -134,9 +133,16 @@ export const documentService = {
       
       console.log('Migrating documents:', documentsToMigrate);
       
+      // Extract the temporary ID from the first URL
+      const firstUrl = Object.values(documentsToMigrate)[0];
+      const tempIdMatch = firstUrl.match(/\/temp-[^\/]+/);
+      const tempId = tempIdMatch ? tempIdMatch[0].substring(1) : 'temp-unknown';
+      
+      console.log(`Using temporary ID for migration: ${tempId}`);
+      
       // Call the backend API to migrate documents
       const response = await apiClient.post<{ updatedUrls: Record<string, string> }>(
-        `/documents/migrate/new-client/${newClientId}`,
+        `/documents/migrate/${tempId}/${newClientId}`,
         { documentUrls: documentsToMigrate }
       );
       

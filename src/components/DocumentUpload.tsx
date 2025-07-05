@@ -12,6 +12,7 @@ interface DocumentUploadProps {
   existingUrl?: string;
   onUploadSuccess: (documentUrl: string) => void;
   onDelete?: () => void;
+  onFileSelected?: (documentType: string, file: File) => void;
   readOnly?: boolean;
 }
 
@@ -22,6 +23,7 @@ const DocumentUpload = ({
   existingUrl,
   onUploadSuccess,
   onDelete,
+  onFileSelected,
   readOnly = false,
 }: DocumentUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -30,6 +32,7 @@ const DocumentUpload = ({
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   // Determine file type from URL extension
   const getFileTypeFromUrl = (url: string): 'image' | 'pdf' | 'other' => {
@@ -102,27 +105,34 @@ const DocumentUpload = ({
       };
       reader.readAsDataURL(file);
       
-      // Use the actual client ID if it's not 'new-client'
-      // Otherwise, generate a temporary unique ID
-      const effectiveClientId = clientId === 'new-client' 
-        ? `temp-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`
-        : clientId;
+      // Store the selected file
+      setSelectedFile(file);
       
-      console.log(`DocumentUpload: Uploading file for clientId=${effectiveClientId}, original clientId=${clientId}`);
-      
-      // Upload to server
-      const result = await documentService.uploadDocument(effectiveClientId, documentType, file);
-      console.log(`DocumentUpload: Upload successful, URL=${result.url}`);
-      
-      const documentUrl = result.url;
-      
-      onUploadSuccess(documentUrl);
-      toast.success('Document uploaded successfully');
+      // If we have a client ID, upload immediately
+      // Otherwise, store the file for later upload
+      if (clientId) {
+        console.log(`DocumentUpload: Uploading file for clientId=${clientId}`);
+        
+        // Upload to server
+        const result = await documentService.uploadDocument(clientId, documentType, file);
+        console.log(`DocumentUpload: Upload successful, URL=${result.url}`);
+        
+        const documentUrl = result.url;
+        onUploadSuccess(documentUrl);
+        toast.success('Document uploaded successfully');
+      } else {
+        // For new clients, just store the file and notify parent
+        if (onFileSelected) {
+          onFileSelected(documentType, file);
+          toast.success('File selected and ready for upload');
+        }
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload document');
       setPreviewUrl(null);
       setFileType(null);
+      setSelectedFile(null);
     } finally {
       setIsUploading(false);
     }

@@ -11,6 +11,7 @@ interface DocumentWithTextUploadProps {
   existingText?: string;
   onDocUploadSuccess: (documentUrl: string) => void;
   onTextChange: (text: string) => void;
+  onFileSelected?: (documentType: string, file: File) => void;
   onDelete?: () => void;
   readOnly?: boolean;
 }
@@ -23,6 +24,7 @@ const DocumentWithTextUpload = ({
   existingText,
   onDocUploadSuccess,
   onTextChange,
+  onFileSelected,
   onDelete,
   readOnly = false,
 }: DocumentWithTextUploadProps) => {
@@ -36,6 +38,7 @@ const DocumentWithTextUpload = ({
         label={`${label} Document`}
         existingUrl={existingDocUrl}
         onUploadSuccess={onDocUploadSuccess}
+        onFileSelected={onFileSelected}
         onDelete={onDelete}
         readOnly={readOnly}
       />
