@@ -4,7 +4,7 @@ import { authService } from './auth';
 // Use the new Choreo API configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
 const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || '';
-const API_TIMEOUT = 8000; // 8 seconds timeout
+const API_TIMEOUT = 80000; // 8 seconds timeout
 
 export interface Client {
   id?: string;

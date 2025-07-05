@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
-const API_TIMEOUT = 8000; // 8 seconds timeout
+const API_TIMEOUT = 80000; // 8 seconds timeout
 const TOKEN_COOKIE_NAME = 'token';
 
 console.log('API Client initialized with baseURL:', baseURL);
