@@ -107,5 +107,48 @@ export const documentService = {
       console.error('Error deleting document:', error);
       throw error;
     }
+  },
+
+  /**
+   * Migrate documents from 'new-client' to the actual client ID
+   * This is used when a new client is created and documents were uploaded before the client was saved
+   */
+  async migrateDocuments(
+    newClientId: string,
+    documentUrls: Record<string, string>
+  ): Promise<Record<string, string>> {
+    try {
+      // Filter out document URLs that don't contain 'new-client' or 'temp-'
+      const documentsToMigrate = Object.entries(documentUrls)
+        .filter(([_, url]) => url && typeof url === 'string' && 
+          (url.includes('new-client') || url.includes('/temp-')))
+        .reduce((acc, [key, url]) => {
+          acc[key] = url;
+          return acc;
+        }, {} as Record<string, string>);
+      
+      if (Object.keys(documentsToMigrate).length === 0) {
+        console.log('No documents to migrate');
+        return documentUrls; // Return original URLs if nothing to migrate
+      }
+      
+      console.log('Migrating documents:', documentsToMigrate);
+      
+      // Call the backend API to migrate documents
+      const response = await apiClient.post<{ updatedUrls: Record<string, string> }>(
+        `/documents/migrate/new-client/${newClientId}`,
+        { documentUrls: documentsToMigrate }
+      );
+      
+      // Merge the updated URLs with the original document URLs
+      const updatedDocumentUrls = { ...documentUrls, ...response.data.updatedUrls };
+      console.log('Documents migrated successfully:', updatedDocumentUrls);
+      
+      return updatedDocumentUrls;
+    } catch (error) {
+      console.error('Error migrating documents:', error);
+      // Return original URLs if migration fails
+      return documentUrls;
+    }
   }
 }; 

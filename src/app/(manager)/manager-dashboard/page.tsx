@@ -106,6 +106,16 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
     { type: 'policy_fee_invoice', url: client.policy_fee_invoice || null, label: 'Policy Fee Invoice' },
     { type: 'vat_fee_debit_note', url: client.vat_fee_debit_note || null, label: 'VAT Debit Note' },
     { type: 'payment_receipt_proof', url: client.payment_receipt_proof || null, label: 'Payment Receipt' },
+    // New document fields
+    { type: 'policyholder_doc', url: client.policyholder_doc || null, label: 'Policyholder' },
+    { type: 'vehicle_number_doc', url: client.vehicle_number_doc || null, label: 'Vehicle Number' },
+    { type: 'proposal_form_doc', url: client.proposal_form_doc || null, label: 'Proposal Form' },
+    { type: 'quotation_doc', url: client.quotation_doc || null, label: 'Quotation' },
+    { type: 'cr_copy_doc', url: client.cr_copy_doc || null, label: 'CR Copy' },
+    { type: 'schedule_doc', url: client.schedule_doc || null, label: 'Schedule' },
+    { type: 'invoice_debit_note_doc', url: client.invoice_debit_note_doc || null, label: 'Invoice/Debit Note' },
+    { type: 'payment_receipt_doc', url: client.payment_receipt_doc || null, label: 'Payment Receipt' },
+    { type: 'nic_br_doc', url: client.nic_br_doc || null, label: 'NIC/BR' },
   ];
 
   return (
@@ -142,6 +152,16 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
               
               <p className="text-sm text-gray-600">Branch:</p>
               <p className="text-sm font-medium">{client.branch || '-'}</p>
+              
+              {/* New text-only fields */}
+              <p className="text-sm text-gray-600">Ceilao IB File No:</p>
+              <p className="text-sm font-medium">{client.ceilao_ib_file_no || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Main Class:</p>
+              <p className="text-sm font-medium">{client.main_class || '-'}</p>
+              
+              <p className="text-sm text-gray-600">Insurer:</p>
+              <p className="text-sm font-medium">{client.insurer || '-'}</p>
             </div>
           </div>
 
@@ -273,6 +293,75 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
                 <p className="text-sm text-gray-600">TC Commission</p>
                 <p className="text-sm font-medium">{client.commission_tc?.toLocaleString() || '0'}</p>
               </div>
+            </div>
+          </div>
+          
+          {/* New document+text fields section */}
+          <div className="col-span-1 md:col-span-2 space-y-4">
+            <h3 className="text-md font-semibold text-gray-700 border-b pb-2">Additional Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {client.policyholder_text && (
+                <>
+                  <p className="text-sm text-gray-600">Policyholder:</p>
+                  <p className="text-sm font-medium">{client.policyholder_text || '-'}</p>
+                </>
+              )}
+              
+              {client.vehicle_number_text && (
+                <>
+                  <p className="text-sm text-gray-600">Vehicle Number:</p>
+                  <p className="text-sm font-medium">{client.vehicle_number_text || '-'}</p>
+                </>
+              )}
+              
+              {client.proposal_form_text && (
+                <>
+                  <p className="text-sm text-gray-600">Proposal Form:</p>
+                  <p className="text-sm font-medium">{client.proposal_form_text || '-'}</p>
+                </>
+              )}
+              
+              {client.quotation_text && (
+                <>
+                  <p className="text-sm text-gray-600">Quotation:</p>
+                  <p className="text-sm font-medium">{client.quotation_text || '-'}</p>
+                </>
+              )}
+              
+              {client.cr_copy_text && (
+                <>
+                  <p className="text-sm text-gray-600">CR Copy:</p>
+                  <p className="text-sm font-medium">{client.cr_copy_text || '-'}</p>
+                </>
+              )}
+              
+              {client.schedule_text && (
+                <>
+                  <p className="text-sm text-gray-600">Schedule:</p>
+                  <p className="text-sm font-medium">{client.schedule_text || '-'}</p>
+                </>
+              )}
+              
+              {client.invoice_debit_note_text && (
+                <>
+                  <p className="text-sm text-gray-600">Invoice/Debit Note:</p>
+                  <p className="text-sm font-medium">{client.invoice_debit_note_text || '-'}</p>
+                </>
+              )}
+              
+              {client.payment_receipt_text && (
+                <>
+                  <p className="text-sm text-gray-600">Payment Receipt:</p>
+                  <p className="text-sm font-medium">{client.payment_receipt_text || '-'}</p>
+                </>
+              )}
+              
+              {client.nic_br_text && (
+                <>
+                  <p className="text-sm text-gray-600">NIC/BR:</p>
+                  <p className="text-sm font-medium">{client.nic_br_text || '-'}</p>
+                </>
+              )}
             </div>
           </div>
         </div>

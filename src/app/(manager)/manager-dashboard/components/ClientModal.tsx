@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { clientService, Client as ClientType } from '@/lib/services/clients';
 import { toast } from 'react-hot-toast';
 import DocumentUpload from '@/components/DocumentUpload';
+import DocumentWithTextUpload from '@/components/DocumentWithTextUpload';
+import { documentService } from '@/lib/services/documents';
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -57,6 +59,29 @@ const defaultClientState: Partial<ClientType> = {
   policy_fee_invoice: '',
   vat_fee_debit_note: '',
   payment_receipt_proof: '',
+    // New text-only fields
+    ceilao_ib_file_no: '',
+    main_class: '',
+    insurer: '',
+    // New document + text fields
+    policyholder_doc: '',
+    policyholder_text: '',
+    vehicle_number_doc: '',
+    vehicle_number_text: '',
+    proposal_form_doc: '',
+    proposal_form_text: '',
+    quotation_doc: '',
+    quotation_text: '',
+    cr_copy_doc: '',
+    cr_copy_text: '',
+    schedule_doc: '',
+    schedule_text: '',
+    invoice_debit_note_doc: '',
+    invoice_debit_note_text: '',
+    payment_receipt_doc: '',
+    payment_receipt_text: '',
+    nic_br_doc: '',
+    nic_br_text: '',
     policy_type: '',
     policy_no: '',
     policy_period_from: '',
@@ -149,10 +174,12 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
     // Ensure URL doesn't have trailing or leading whitespace
     const trimmedUrl = url.trim();
     
+    console.log(`ClientModal: Document uploaded for ${documentType}, URL=${trimmedUrl}`);
+    
     // Check if the URL is a long Azure Blob Storage URL with SAS token
     // These can cause issues when sent in requests due to their length
     if (trimmedUrl.includes('blob.core.windows.net') && trimmedUrl.length > 200) {
-      console.log(`Truncating long Azure URL for ${documentType}`);
+      console.log(`ClientModal: Truncating long Azure URL for ${documentType}`);
       
       // Just store the URL without the SAS token for database storage
       // The secure document endpoint will handle token generation when needed
@@ -204,6 +231,49 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         } else {
           // Create new client
           const newClientId = await clientService.createClient(clientData as ClientType);
+          console.log(`ClientModal: New client created with ID ${newClientId}`);
+          
+          // Check if there are any documents that need to be migrated from 'new-client' to the actual client ID
+          const documentFields = Object.entries(clientData)
+            .filter(([key, value]) => 
+              typeof value === 'string' && 
+              value && 
+              (value.includes('new-client') || value.includes('/temp-')) &&
+              (key.includes('_doc') || key.includes('_proof'))
+            )
+            .reduce((acc, [key, value]) => {
+              acc[key] = value as string;
+              return acc;
+            }, {} as Record<string, string>);
+          
+          if (Object.keys(documentFields).length > 0) {
+            console.log(`ClientModal: Found ${Object.keys(documentFields).length} documents to migrate:`, documentFields);
+            
+            try {
+              // Migrate documents from 'new-client' to the actual client ID
+              console.log(`ClientModal: Starting document migration for client ${newClientId}`);
+              const updatedUrls = await documentService.migrateDocuments(newClientId, documentFields);
+              
+              // If there are updated URLs, update the client with the new URLs
+              if (Object.keys(updatedUrls).length > 0) {
+                console.log('ClientModal: Documents migrated successfully, updating client with new URLs:', updatedUrls);
+                await clientService.updateClient(newClientId, updatedUrls);
+                console.log('ClientModal: Client updated with new document URLs');
+              } else {
+                console.log('ClientModal: No documents were migrated');
+              }
+            } catch (migrationError) {
+              console.error('ClientModal: Error migrating documents:', migrationError);
+              // Don't fail the whole operation if document migration fails
+              toast.error('Client created but document migration failed. Please update documents manually.', {
+                duration: 6000,
+                position: 'top-center',
+              });
+            }
+          } else {
+            console.log('ClientModal: No documents to migrate');
+          }
+          
           toast.success(`Client added successfully`, {
             duration: 4000,
             position: 'top-center',
@@ -393,7 +463,118 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             />
           </div>
 
-          <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Basic Information</h3>
+          <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Documents with Text</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="policyholder_doc"
+              label="Policyholder"
+              existingDocUrl={formData.policyholder_doc as string}
+              existingText={formData.policyholder_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('policyholder_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, policyholder_text: text })}
+              onDelete={() => setFormData({ ...formData, policyholder_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="vehicle_number_doc"
+              label="Vehicle Number"
+              existingDocUrl={formData.vehicle_number_doc as string}
+              existingText={formData.vehicle_number_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('vehicle_number_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, vehicle_number_text: text })}
+              onDelete={() => setFormData({ ...formData, vehicle_number_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="proposal_form_doc"
+              label="Proposal Form"
+              existingDocUrl={formData.proposal_form_doc as string}
+              existingText={formData.proposal_form_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('proposal_form_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, proposal_form_text: text })}
+              onDelete={() => setFormData({ ...formData, proposal_form_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="quotation_doc"
+              label="Quotation"
+              existingDocUrl={formData.quotation_doc as string}
+              existingText={formData.quotation_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('quotation_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, quotation_text: text })}
+              onDelete={() => setFormData({ ...formData, quotation_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="cr_copy_doc"
+              label="CR Copy"
+              existingDocUrl={formData.cr_copy_doc as string}
+              existingText={formData.cr_copy_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('cr_copy_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, cr_copy_text: text })}
+              onDelete={() => setFormData({ ...formData, cr_copy_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="schedule_doc"
+              label="Schedule"
+              existingDocUrl={formData.schedule_doc as string}
+              existingText={formData.schedule_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('schedule_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, schedule_text: text })}
+              onDelete={() => setFormData({ ...formData, schedule_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="invoice_debit_note_doc"
+              label="Invoice / Debit Note"
+              existingDocUrl={formData.invoice_debit_note_doc as string}
+              existingText={formData.invoice_debit_note_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('invoice_debit_note_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, invoice_debit_note_text: text })}
+              onDelete={() => setFormData({ ...formData, invoice_debit_note_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="payment_receipt_doc"
+              label="Payment Receipt"
+              existingDocUrl={formData.payment_receipt_doc as string}
+              existingText={formData.payment_receipt_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('payment_receipt_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, payment_receipt_text: text })}
+              onDelete={() => setFormData({ ...formData, payment_receipt_doc: '' })}
+              readOnly={false}
+            />
+            
+            <DocumentWithTextUpload
+              clientId={formData.id || client?.id || 'new-client'}
+              documentType="nic_br_doc"
+              label="NIC / BR"
+              existingDocUrl={formData.nic_br_doc as string}
+              existingText={formData.nic_br_text as string}
+              onDocUploadSuccess={(url) => handleDocumentUpload('nic_br_doc', url)}
+              onTextChange={(text) => setFormData({ ...formData, nic_br_text: text })}
+              onDelete={() => setFormData({ ...formData, nic_br_doc: '' })}
+              readOnly={false}
+            />
+          </div>
+
+          <h3 className="font-medium text-lg text-gray-700 border-b pb-2 mt-8">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -416,6 +597,18 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.introducer_code}
                 onChange={(e) => setFormData({ ...formData, introducer_code: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ceilao IB File No.
+              </label>
+              <input
+                type="text"
+                value={formData.ceilao_ib_file_no}
+                onChange={(e) => setFormData({ ...formData, ceilao_ib_file_no: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -456,12 +649,25 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 <option value="Motor">Motor</option>
                 <option value="Fire">Fire</option>
                 <option value="Marine">Marine</option>
-                <option value="Health">Health</option>
-                <option value="Life">Life</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Liability">Liability</option>
+                <option value="Miscellaneous">Miscellaneous</option>
               </select>
               {errors.product && (
                 <p className="mt-1 text-sm text-red-600">{errors.product}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Main Class
+              </label>
+              <input
+                type="text"
+                value={formData.main_class}
+                onChange={(e) => setFormData({ ...formData, main_class: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
             </div>
 
             <div>
@@ -472,13 +678,8 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.policy_}
                 onChange={(e) => setFormData({ ...formData, policy_: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                  errors.policy_ ? 'border-red-500' : 'border-gray-200'
-                }`}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
-              {errors.policy_ && (
-                <p className="mt-1 text-sm text-red-600">{errors.policy_}</p>
-              )}
             </div>
 
             <div>
@@ -493,15 +694,30 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 }`}
               >
                 <option value="">Select Insurance Provider</option>
-                <option value="AIA">AIA</option>
                 <option value="Allianz">Allianz</option>
+                <option value="AIA">AIA</option>
+                <option value="AIG">AIG</option>
                 <option value="Ceylinco">Ceylinco</option>
-                <option value="Union Assurance">Union Assurance</option>
-                <option value="Sri Lanka Insurance">Sri Lanka Insurance</option>
+                <option value="HNB">HNB</option>
+                <option value="LOLC">LOLC</option>
+                <option value="SLIC">SLIC</option>
+                <option value="Union">Union</option>
               </select>
               {errors.insurance_provider && (
                 <p className="mt-1 text-sm text-red-600">{errors.insurance_provider}</p>
               )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Insurer
+              </label>
+              <input
+                type="text"
+                value={formData.insurer}
+                onChange={(e) => setFormData({ ...formData, insurer: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
             </div>
 
             <div>
