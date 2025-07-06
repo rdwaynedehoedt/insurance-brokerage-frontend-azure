@@ -710,7 +710,7 @@ export default function ManagerDashboard() {
               className="mb-2"
             />
             <h1 className="text-xl font-bold text-orange-700">Ceilao Insurance</h1>
-            <p className="text-sm text-gray-600">{userRole === 'employee' ? 'Employee Portal' : 'Manager Portal'}</p>
+            <p className="text-sm text-gray-600">{userRole === 'employee' ? 'Employee Portal' : 'Underwriters Portal'}</p>
           </div>
         </div>
         
