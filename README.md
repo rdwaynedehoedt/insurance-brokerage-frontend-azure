@@ -15,6 +15,17 @@ A modern insurance brokerage management system built with Next.js, TypeScript, a
   - View assigned clients
   - Track policy sales
 
+### Document Management
+- Direct-to-Azure Uploads
+  - Upload files directly to Azure Blob Storage
+  - Bypass server for improved performance
+  - Real-time upload progress tracking
+- Automatic File Optimization
+  - Smart compression of images and PDFs
+  - Target size of 50KB for all documents
+  - Up to 90% size reduction for faster uploads
+  - Improved user experience with progress indicators
+
 ### Underwriter Dashboard
 - Policy Management
   - Create new insurance policies
@@ -62,6 +73,10 @@ A modern insurance brokerage management system built with Next.js, TypeScript, a
 - **Form Handling**: React Forms
 - **Authentication**: NextAuth.js (to be implemented)
 - **API Integration**: REST API (to be implemented)
+- **File Handling**:
+  - browser-image-compression: Image optimization
+  - pdf-lib: PDF compression and manipulation
+  - Direct-to-Azure upload with SAS tokens
 
 ## 📦 Project Structure
 

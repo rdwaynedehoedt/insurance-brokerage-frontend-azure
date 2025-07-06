@@ -51,8 +51,28 @@ const DirectDocumentUpload = ({
       
       // Process file (compress if it's an image)
       console.log('Processing file for upload:', file.name);
-      const processedFile = await processFileForUpload(file);
+      
+      // Notify user if file is large and will be compressed
+      if (file.size > 50 * 1024) {
+        toast.loading(`Optimizing ${file.name} for faster upload...`, { duration: 2000 });
+      }
+      
+      setUploadStatus('Compressing file...');
+      const processedFile = await processFileForUpload(file, { targetSizeKB: 50 });
       console.log(`File processed: ${file.name} - Original size: ${(file.size / 1024).toFixed(2)}KB, Processed size: ${(processedFile.size / 1024).toFixed(2)}KB`);
+      
+      // Show compression results to user
+      if (file.size > processedFile.size && file.size > 50 * 1024) {
+        const reductionPercent = ((1 - processedFile.size / file.size) * 100).toFixed(0);
+        if (parseInt(reductionPercent) > 20) {
+          toast.success(`File optimized! Reduced by ${reductionPercent}%`);
+        }
+      }
+      
+      // Show warning if file is still large
+      if (processedFile.size > 100 * 1024) {
+        console.warn(`File is still large (${(processedFile.size / 1024).toFixed(2)}KB) after compression. This may cause slow uploads.`);
+      }
       
       setUploadStatus('Getting upload token...');
       
