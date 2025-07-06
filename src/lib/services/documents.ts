@@ -254,5 +254,77 @@ export const documentService = {
       // Return original URLs if migration fails
       return documentUrls;
     }
+  },
+
+  /**
+   * Get an upload token for direct upload to Azure Blob Storage
+   */
+  async getUploadToken(
+    clientId: string,
+    documentType: string,
+    fileName?: string
+  ): Promise<{
+    sasUrl: string;
+    sasToken: string;
+    blobUrl: string;
+    blobName: string;
+    containerName: string;
+  }> {
+    try {
+      const queryParams = fileName ? `?fileName=${encodeURIComponent(fileName)}` : '';
+      const response = await apiClient.get<{
+        sasUrl: string;
+        sasToken: string;
+        blobUrl: string;
+        blobName: string;
+        containerName: string;
+      }>(
+        `/documents/upload-token/${clientId}/${documentType}${queryParams}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error getting upload token:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Confirm a direct upload to Azure Blob Storage
+   */
+  async confirmUpload(
+    clientId: string,
+    documentType: string,
+    uploadInfo: {
+      blobName: string;
+      blobUrl: string;
+      fileName?: string;
+      fileType?: string;
+      fileSize?: number;
+    }
+  ): Promise<{
+    message: string;
+    blobUrl: string;
+    fileName: string;
+    contentType: string;
+    contentLength: number;
+    createdOn: string;
+  }> {
+    try {
+      const response = await apiClient.post<{
+        message: string;
+        blobUrl: string;
+        fileName: string;
+        contentType: string;
+        contentLength: number;
+        createdOn: string;
+      }>(
+        `/documents/confirm-upload/${clientId}/${documentType}`,
+        uploadInfo
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming upload:', error);
+      throw error;
+    }
   }
 }; 
