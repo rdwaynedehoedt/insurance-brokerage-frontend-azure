@@ -805,7 +805,7 @@ export default function ManagerDashboard() {
               <div className="relative w-full md:w-64">
                 <input
                   type="text"
-                  placeholder={userRole === 'employee' ? "Search clients..." : "Search underwriters..."}
+                  placeholder={userRole === 'employee' ? "Search clients..." : "Search Client..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -819,7 +819,7 @@ export default function ManagerDashboard() {
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
                   >
                     <Plus className="w-5 h-5 mr-2" />
-                    {userRole === 'employee' ? 'Add Client' : 'Add Underwriter'}
+                    {userRole === 'employee' ? 'Add Client' : 'Add Client'}
                   </button>
 
                   {/* PDF Generator Button - Available to both employees and managers */}
