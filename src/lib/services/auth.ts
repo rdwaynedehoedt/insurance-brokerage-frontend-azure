@@ -23,7 +23,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'manager' | 'sales';
+  role: 'admin' | 'manager' | 'sales' | 'employee';
 }
 
 export interface AuthResponse {
@@ -204,7 +204,29 @@ class AuthService {
           .catch(() => {}); // Silently catch errors on logout
       }
     } finally {
+      // Clear all auth tokens and user data
       this.clearAuthToken();
+      
+      // Clear any session storage data
+      if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        
+        // Remove any role-specific data
+        localStorage.removeItem('lastPath');
+        localStorage.removeItem('dashboardState');
+        
+        // Remove any cached API responses
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('api_') || key.includes('cache'))) {
+            keysToRemove.push(key);
+          }
+        }
+        
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      }
+      
       // Set the API token for Choreo if available
       if (API_TOKEN) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${API_TOKEN}`;
@@ -271,6 +293,8 @@ class AuthService {
     switch (role) {
       case 'admin': return '/admin/dashboard';
       case 'manager': return '/manager-dashboard';
+      case 'employee': return '/manager-dashboard';
+      case 'sales': return '/sales-dashboard';
       default: return '/';
     }
   }

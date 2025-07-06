@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Home, LogOut, Search, Plus, Eye, X, Trash, FileText, Edit, RefreshCw, Download, Upload, ChevronLeft, ChevronRight, FileImage } from 'lucide-react';
 import ClientModal from './components/ClientModal';
 import ReportGenerator from './components/ReportGenerator';
 import { clientService, Client, PaginatedClientsResponse } from '@/lib/services/clients';
@@ -376,7 +376,7 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
 }
 
 export default function ManagerDashboard() {
-  const { logout } = useAuth();
+  const { user, logout, userRole } = useAuth();
   const [activeTab, setActiveTab] = useState('clients');
   const [clients, setClients] = useState<Client[]>([]);
   const [totalClientCount, setTotalClientCount] = useState(0);
@@ -399,11 +399,19 @@ export default function ManagerDashboard() {
   const [totalToImport, setTotalToImport] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10); // Default 10 items per page
 
-  const menuItems = [
+  // Define different menu items based on role
+  const managerMenuItems = [
     // { id: 'overview', label: 'Overview', icon: Home }, // Commented out as requested
     { id: 'clients', label: 'Underwriters', icon: Users },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
+  
+  const employeeMenuItems = [
+    { id: 'clients', label: 'Clients', icon: Users },
+  ];
+  
+  // Use the appropriate menu items based on role
+  const menuItems = userRole === 'employee' ? employeeMenuItems : managerMenuItems;
 
   // Load clients on initial render to fix the "0 Total Clients" issue
   useEffect(() => {
@@ -661,6 +669,10 @@ export default function ManagerDashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const handleOpenPdfGenerator = () => {
+    window.open('https://ceilao-pdf-gen.vercel.app/', '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LoadingOverlay isLoading={isLoading} message="Processing data..." />
@@ -698,7 +710,7 @@ export default function ManagerDashboard() {
               className="mb-2"
             />
             <h1 className="text-xl font-bold text-orange-700">Ceilao Insurance</h1>
-            <p className="text-sm text-gray-600">Manager Portal</p>
+            <p className="text-sm text-gray-600">{userRole === 'employee' ? 'Employee Portal' : 'Manager Portal'}</p>
           </div>
         </div>
         
@@ -740,14 +752,14 @@ export default function ManagerDashboard() {
             <div>
               <h2 className="text-xl font-bold text-gray-800">
                 {activeTab === 'clients' 
-                  ? 'Underwriters' 
+                  ? userRole === 'employee' ? 'Clients' : 'Underwriters'
                   : menuItems.find(item => item.id === activeTab)?.label || ''}
               </h2>
-              <p className="text-gray-600 mt-1">Welcome back, Manager!</p>
+              <p className="text-gray-600 mt-1">Welcome back, {userRole === 'employee' ? 'Employee' : 'Manager'}!</p>
             </div>
             <div className="flex items-center space-x-4">
               <span className="inline-block px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
-                Manager
+                {userRole === 'employee' ? 'Employee' : 'Manager'}
               </span>
               <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                 <Users className="w-6 h-6 text-orange-700" />
@@ -791,57 +803,80 @@ export default function ManagerDashboard() {
               {/* Search and Filters */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="relative w-full md:w-64">
-                      <input
-                        type="text"
-                        placeholder="Search clients..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                    </div>
+                <input
+                  type="text"
+                  placeholder={userRole === 'employee' ? "Search clients..." : "Search underwriters..."}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              </div>
                     
-                <div className="flex items-center gap-3 flex-wrap">
-                    {/* CSV Template Download Button */}
-                    <button
-                      onClick={downloadCsvTemplate}
-                      className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      title="Download CSV Template"
-                      disabled={isUploading}
-                    >
-                      <Download className="w-4 h-4" />
-                      CSV Template
-                    </button>
-                    
-                    {/* CSV Import Button */}
-                    <label className={`flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <Upload className="w-4 h-4" />
-                      Import CSV
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleCsvImport}
-                        disabled={isUploading}
-                        className="hidden"
-                      />
-                    </label>
-                    
-                    <button
-                      onClick={handleAddClient}
-                      className="flex items-center gap-1 px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800"
-                      disabled={isUploading}
-                    >
-                    <Plus className="w-4 h-4" />
-                      Add Client
-                    </button>
-                    <button
-                      onClick={() => setViewTable(!viewTable)}
-                      className="flex items-center gap-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                      disabled={isUploading}
-                    >
-                      <Eye className="w-4 h-4" />
-                      {viewTable ? 'Hide Table' : 'View Table'}
-                    </button>
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <button
+                    onClick={handleAddClient}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    {userRole === 'employee' ? 'Add Client' : 'Add Underwriter'}
+                  </button>
+
+                  {/* PDF Generator Button - Available to both employees and managers */}
+                  <button
+                    onClick={handleOpenPdfGenerator}
+                    className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md flex items-center"
+                    title="Generate and compress PDF files from multiple images"
+                  >
+                    <FileImage className="w-5 h-5 mr-2" />
+                    PDF Generator
+                  </button>
+
+                  {userRole !== 'employee' && (
+                    <>
+                      <button
+                        onClick={handleOpenReportModal}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center"
+                      >
+                        <FileText className="w-5 h-5 mr-2" />
+                        Generate Report
+                      </button>
+                      
+                      <button
+                        onClick={downloadCsvTemplate}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center"
+                      >
+                        <Download className="w-5 h-5 mr-2" />
+                        Download Template
+                      </button>
+                      
+                      <div className="relative">
+                        <button
+                          onClick={() => document.getElementById('csvImport')?.click()}
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md flex items-center"
+                        >
+                          <Upload className="w-5 h-5 mr-2" />
+                          Import CSV
+                        </button>
+                        <input
+                          type="file"
+                          id="csvImport"
+                          accept=".csv"
+                          onChange={handleCsvImport}
+                          className="hidden"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <button
+                    onClick={() => setViewTable(!viewTable)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center"
+                    disabled={isUploading}
+                  >
+                    <Eye className="w-5 h-5 mr-2" />
+                    {viewTable ? 'Hide Table' : 'View Table'}
+                  </button>
                 </div>
               </div>
 
@@ -875,7 +910,7 @@ export default function ManagerDashboard() {
 
               {/* Clients Table - Only show when viewTable is true */}
               {viewTable && (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
                   <div className="overflow-x-auto">
                     {isLoading ? (
                       <div className="p-8 text-center">
@@ -886,10 +921,12 @@ export default function ManagerDashboard() {
                         <p>No clients found.</p>
                       </div>
                     ) : (
-                      <table className="w-full">
+                      <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Name</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {userRole === 'employee' ? 'Client Name' : 'Underwriter Name'}
+                            </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy #</th>
@@ -898,7 +935,7 @@ export default function ManagerDashboard() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {clients.map((client) => (
-                            <tr key={client.id}>
+                            <tr key={client.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-gray-900">{client.client_name}</div>
                               </td>
@@ -912,28 +949,35 @@ export default function ManagerDashboard() {
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-900">{client.policy_no}</div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div className="flex items-center justify-end space-x-3">
+                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex items-center space-x-2">
                                   <button
                                     onClick={() => handleViewClientDetails(client)}
-                                    className="text-blue-600 hover:text-blue-900 flex items-center"
+                                    className="p-1 rounded-full hover:bg-gray-100"
+                                    title="View Details"
                                   >
-                                    <Eye className="w-4 h-4 mr-1" />
-                                    Details
+                                    <Eye className="h-5 w-5 text-blue-500" />
                                   </button>
-                                  <button
-                                    onClick={() => handleEditClient(client)}
-                                    className="text-orange-600 hover:text-orange-900"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteClient(client)}
-                                    className="text-red-600 hover:text-red-900 flex items-center"
-                                  >
-                                    <Trash className="w-4 h-4 mr-1" />
-                                    Delete
-                                  </button>
+                                  
+                                  {userRole !== 'employee' && (
+                                    <>
+                                      <button
+                                        onClick={() => handleEditClient(client)}
+                                        className="p-1 rounded-full hover:bg-gray-100"
+                                        title="Edit Client"
+                                      >
+                                        <Edit className="h-5 w-5 text-green-500" />
+                                      </button>
+                                      
+                                      <button
+                                        onClick={() => handleDeleteClient(client)}
+                                        className="p-1 rounded-full hover:bg-gray-100"
+                                        title="Delete Client"
+                                      >
+                                        <Trash className="h-5 w-5 text-red-500" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -950,7 +994,7 @@ export default function ManagerDashboard() {
                         <p className="text-sm text-gray-700">
                           Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalClientCount)}</span> to{' '}
                           <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalClientCount)}</span> of{' '}
-                          <span className="font-medium">{totalClientCount}</span> clients
+                          <span className="font-medium">{totalClientCount}</span> {userRole === 'employee' ? 'clients' : 'underwriters'}
                         </p>
                         
                         <div className="flex items-center space-x-1">

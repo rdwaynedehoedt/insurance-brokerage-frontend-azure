@@ -20,7 +20,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const roleDashboardMap = {
   'admin': '/admin/dashboard',
   'manager': '/manager-dashboard',
-  'sales': '/sales-dashboard'
+  'sales': '/sales-dashboard',
+  'employee': '/manager-dashboard'
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -103,10 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    authService.logout();
+    // First clear all state
     setUser(null);
     setIsAuthenticated(false);
-    router.push('/login');
+    
+    // Then perform the logout in the auth service
+    authService.logout();
+    
+    // Force a hard navigation to the login page to ensure a clean state
+    window.location.href = '/login';
   };
 
   const getToken = async (): Promise<string | null> => {
