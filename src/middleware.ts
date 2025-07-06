@@ -11,7 +11,8 @@ interface JWTPayload {
 // Map roles to their dashboard paths
 const roleDashboardMap = {
   'admin': '/admin/dashboard',
-  'manager': '/manager-dashboard'
+  'manager': '/manager-dashboard',
+  'sales': '/sales-dashboard'
 };
 
 export function middleware(request: NextRequest) {
@@ -30,8 +31,14 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public paths that don't require authentication
-  const publicPaths = ['/login', '/forgot-password'];
-  if (publicPaths.includes(path)) {
+  const publicPaths = ['/login', '/(auth)/login', '/forgot-password'];
+  const isPublicPath = publicPaths.some(publicPath => 
+    publicPath.includes('(') 
+      ? path.match(new RegExp(publicPath.replace('(', '\\(').replace(')', '\\)')))
+      : path === publicPath
+  );
+  
+  if (isPublicPath) {
     if (token) {
       try {
         // Decode the token to get the user's role
@@ -70,7 +77,8 @@ export function middleware(request: NextRequest) {
     // Role-based route protection
     const roleBasedPaths = {
       '/admin': 'admin',
-      '/manager-dashboard': 'manager'
+      '/manager-dashboard': 'manager',
+      '/sales-dashboard': 'sales'
     };
 
     for (const [pathPrefix, requiredRole] of Object.entries(roleBasedPaths)) {
@@ -98,6 +106,8 @@ export const config = {
   matcher: [
     '/admin/:path*',
     '/manager-dashboard/:path*',
+    '/sales-dashboard/:path*',
+    '/(auth)/login',
     '/login',
     '/'
   ],

@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   userRole: string | null;
+  getToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,7 +19,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Map roles to their dashboard paths
 const roleDashboardMap = {
   'admin': '/admin/dashboard',
-  'manager': '/manager-dashboard'
+  'manager': '/manager-dashboard',
+  'sales': '/sales-dashboard'
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -107,6 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  const getToken = async (): Promise<string | null> => {
+    return authService.getToken();
+  };
+
   const userRole = user?.role || authService.getUserRole();
 
   return (
@@ -117,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated, 
         login, 
         logout,
-        userRole
+        userRole,
+        getToken
       }}
     >
       {children}

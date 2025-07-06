@@ -333,7 +333,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         
         if (error.response?.status === 409) {
           actionRequired = 'Please try a different email address.';
-        }
+            }
         
         toast.error(`${errorMessage}${actionRequired ? ' ' + actionRequired : ''}`, {
           duration: 6000,

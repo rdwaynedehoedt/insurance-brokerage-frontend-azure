@@ -23,7 +23,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'manager';
+  role: 'admin' | 'manager' | 'sales';
 }
 
 export interface AuthResponse {
