@@ -115,8 +115,6 @@ export const compressPDF = async (
     // First attempt with medium quality
     compressedBytes = await pdfDoc.save({
       useObjectStreams: true,
-      addCompressXref: true,
-      useCompression: true,
     });
     
     // If still too large, try with more aggressive settings
@@ -135,8 +133,6 @@ export const compressPDF = async (
       
       compressedBytes = await newPdfDoc.save({
         useObjectStreams: true,
-        addCompressXref: true,
-        useCompression: true,
       });
       
       // Add a note if pages were removed
