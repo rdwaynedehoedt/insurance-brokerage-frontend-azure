@@ -245,13 +245,13 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <div 
                 className={`border rounded-lg p-4 cursor-pointer transition ${
                   reportType === 'all_clients' 
-                    ? 'border-orange-500 bg-orange-50' 
+                    ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => setReportType('all_clients')}
               >
                 <div className="flex items-center mb-2">
-                  <FileText className="h-5 w-5 text-orange-500 mr-2" />
+                  <FileText className="h-5 w-5 text-blue-500 mr-2" />
                   <span className="font-medium">All Clients</span>
                 </div>
                 <p className="text-xs text-gray-500">
@@ -262,13 +262,13 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <div 
                 className={`border rounded-lg p-4 cursor-pointer transition ${
                   reportType === 'financial_summary' 
-                    ? 'border-orange-500 bg-orange-50' 
+                    ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => setReportType('financial_summary')}
               >
                 <div className="flex items-center mb-2">
-                  <FileText className="h-5 w-5 text-orange-500 mr-2" />
+                  <FileText className="h-5 w-5 text-blue-500 mr-2" />
                   <span className="font-medium">Financial Summary</span>
                 </div>
                 <p className="text-xs text-gray-500">
@@ -279,13 +279,13 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <div 
                 className={`border rounded-lg p-4 cursor-pointer transition ${
                   reportType === 'policy_expiry' 
-                    ? 'border-orange-500 bg-orange-50' 
+                    ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => setReportType('policy_expiry')}
               >
                 <div className="flex items-center mb-2">
-                  <FileText className="h-5 w-5 text-orange-500 mr-2" />
+                  <FileText className="h-5 w-5 text-blue-500 mr-2" />
                   <span className="font-medium">Policy Expiry</span>
                 </div>
                 <p className="text-xs text-gray-500">
@@ -301,7 +301,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <button
                 className={`px-3 py-2 text-sm rounded-md ${
                   dateRange === 'all_time' 
-                    ? 'bg-orange-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
                 onClick={() => setDateRange('all_time')}
@@ -312,7 +312,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <button
                 className={`px-3 py-2 text-sm rounded-md ${
                   dateRange === 'this_month' 
-                    ? 'bg-orange-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
                 onClick={() => setDateRange('this_month')}
@@ -323,7 +323,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <button
                 className={`px-3 py-2 text-sm rounded-md ${
                   dateRange === 'this_quarter' 
-                    ? 'bg-orange-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
                 onClick={() => setDateRange('this_quarter')}
@@ -334,7 +334,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <button
                 className={`px-3 py-2 text-sm rounded-md ${
                   dateRange === 'this_year' 
-                    ? 'bg-orange-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
                 onClick={() => setDateRange('this_year')}
@@ -345,7 +345,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               <button
                 className={`px-3 py-2 text-sm rounded-md ${
                   dateRange === 'custom' 
-                    ? 'bg-orange-500 text-white' 
+                    ? 'bg-blue-500 text-white' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
                 onClick={() => setDateRange('custom')}
@@ -364,7 +364,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
@@ -375,7 +375,7 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -388,8 +388,8 @@ export default function ReportGenerator({ isOpen, onClose, clients }: ReportGene
               disabled={isGenerating || (dateRange === 'custom' && (!startDate || !endDate))}
               className={`flex items-center px-4 py-2 rounded-md text-white ${
                 isGenerating || (dateRange === 'custom' && (!startDate || !endDate))
-                  ? 'bg-orange-300 cursor-not-allowed'
-                  : 'bg-orange-600 hover:bg-orange-700'
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
               <Download className="h-4 w-4 mr-2" />

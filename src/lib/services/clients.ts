@@ -302,6 +302,17 @@ export const clientService = {
     }
   },
 
+  async getNextClientId(): Promise<string> {
+    try {
+      const response = await apiClient.get<ApiResponse<{id: string}>>('/clients/next-id');
+      return response.data.data.id;
+    } catch (error) {
+      console.error('Error getting next client ID:', error);
+      // Return a fallback ID pattern if the API call fails
+      return `C${new Date().getTime().toString().substring(7)}`;
+    }
+  },
+
   async deleteClient(id: string): Promise<void> {
     try {
       await apiClient.delete(`/clients/${id}`);

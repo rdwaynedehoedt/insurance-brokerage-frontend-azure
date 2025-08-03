@@ -148,7 +148,7 @@ export default function LoginForm() {
               className={`pl-10 block w-full rounded-lg border ${
                 emailError || error 
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                  : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
+                  : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
               } px-4 py-3 text-gray-800 placeholder-gray-400 
               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-20`}
               placeholder="Email"
@@ -179,7 +179,7 @@ export default function LoginForm() {
               className={`pl-10 pr-10 block w-full rounded-lg border ${
                 passwordError || error 
                   ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                  : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'
+                  : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
               } px-4 py-3 text-gray-800 placeholder-gray-400 
               transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-20`}
               placeholder="Password"
@@ -216,7 +216,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
+          className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
         >
           {isLoading ? (
             <>

@@ -112,6 +112,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
   const [errors, setErrors] = useState<ClientErrors>({});
   const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingId, setIsLoadingId] = useState(false);
 
   useEffect(() => {
     if (client) {
@@ -124,8 +125,27 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
       // Reset to empty state when adding a new client
       setFormData({ ...defaultClientState });
       setPendingFiles({}); // Clear pending files
+      
+      // Fetch next available client ID
+      fetchNextClientId();
     }
   }, [client, isOpen]);
+  
+  // Fetch the next available client ID from the server
+  const fetchNextClientId = async () => {
+    if (!client) {
+      try {
+        setIsLoadingId(true);
+        const nextId = await clientService.getNextClientId();
+        setFormData(prev => ({ ...prev, id: nextId }));
+      } catch (error) {
+        console.error('Error fetching next client ID:', error);
+        // Leave the ID field empty if there's an error
+      } finally {
+        setIsLoadingId(false);
+      }
+    }
+  };
 
   const validateForm = () => {
     const newErrors: ClientErrors = {};
@@ -354,7 +374,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <h2 className="text-xl font-bold text-gray-800 flex items-center">
             {client ? 'Edit Client' : 'Add New Client'}
             {isSubmitting && (
-              <span className="ml-3 flex items-center text-orange-600">
+              <span className="ml-3 flex items-center text-blue-600">
                 <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -378,11 +398,11 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
         >
           {isSubmitting && (
             <div className="fixed top-4 right-4 bg-white p-3 rounded-lg shadow-lg flex items-center z-20">
-              <svg className="animate-spin h-5 w-5 mr-3 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 mr-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="text-orange-600 font-medium">{client ? 'Updating client...' : 'Adding new client...'}</span>
+              <span className="text-blue-600 font-medium">{client ? 'Updating client...' : 'Adding new client...'}</span>
             </div>
           )}
           <h3 className="font-medium text-lg text-gray-700 border-b pb-2">Documents</h3>
@@ -622,15 +642,23 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                ID
+                ID {!client && <span className="text-xs text-blue-600">(Auto-generated)</span>}
               </label>
-              <input
-                type="text"
-                value={formData.id}
-                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                disabled={!!client}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.id}
+                  onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                  className={`w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isLoadingId ? 'bg-gray-50' : ''}`}
+                  disabled={!!client || isLoadingId}
+                  placeholder={isLoadingId ? "Generating ID..." : ""}
+                />
+                {isLoadingId && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -641,19 +669,19 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.introducer_code}
                 onChange={(e) => setFormData({ ...formData, introducer_code: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ceilao IB File No.
+                InsureMe IB File No.
               </label>
               <input
                 type="text"
                 value={formData.ceilao_ib_file_no}
                 onChange={(e) => setFormData({ ...formData, ceilao_ib_file_no: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -664,7 +692,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               <select
                 value={formData.customer_type}
                 onChange={(e) => setFormData({ ...formData, customer_type: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.customer_type ? 'border-red-500' : 'border-gray-200'
                 }`}
               >
@@ -685,7 +713,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               <select
                 value={formData.product}
                 onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.product ? 'border-red-500' : 'border-gray-200'
                 }`}
               >
@@ -710,7 +738,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.main_class}
                 onChange={(e) => setFormData({ ...formData, main_class: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -722,7 +750,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.policy_}
                 onChange={(e) => setFormData({ ...formData, policy_: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -733,7 +761,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               <select
                 value={formData.insurance_provider}
                 onChange={(e) => setFormData({ ...formData, insurance_provider: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.insurance_provider ? 'border-red-500' : 'border-gray-200'
                 }`}
               >
@@ -760,7 +788,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.insurer}
                 onChange={(e) => setFormData({ ...formData, insurer: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -772,7 +800,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.branch}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -784,7 +812,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.client_name}
                 onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.client_name ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -804,7 +832,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.street1}
                 onChange={(e) => setFormData({ ...formData, street1: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -816,7 +844,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.street2}
                 onChange={(e) => setFormData({ ...formData, street2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -828,7 +856,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -840,7 +868,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -852,7 +880,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.province}
                 onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -867,7 +895,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="tel"
                 value={formData.telephone}
                 onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -879,7 +907,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="tel"
                 value={formData.mobile_no}
                 onChange={(e) => setFormData({ ...formData, mobile_no: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.mobile_no ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -896,7 +924,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.contact_person}
                 onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -908,7 +936,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.email ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -925,7 +953,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.social_media}
                 onChange={(e) => setFormData({ ...formData, social_media: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -940,7 +968,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.policy_type}
                 onChange={(e) => setFormData({ ...formData, policy_type: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -952,7 +980,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.policy_no}
                 onChange={(e) => setFormData({ ...formData, policy_no: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.policy_no ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -969,7 +997,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="date"
                 value={formData.policy_period_from}
                 onChange={(e) => setFormData({ ...formData, policy_period_from: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.policy_period_from ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -986,7 +1014,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="date"
                 value={formData.policy_period_to}
                 onChange={(e) => setFormData({ ...formData, policy_period_to: e.target.value })}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.policy_period_to ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -1003,7 +1031,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.coverage}
                 onChange={(e) => setFormData({ ...formData, coverage: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1015,7 +1043,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.sum_insured}
                 onChange={(e) => setFormData({ ...formData, sum_insured: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1030,7 +1058,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.basic_premium}
                 onChange={(e) => setFormData({ ...formData, basic_premium: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1042,7 +1070,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.srcc_premium}
                 onChange={(e) => setFormData({ ...formData, srcc_premium: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1054,7 +1082,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.tc_premium}
                 onChange={(e) => setFormData({ ...formData, tc_premium: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1066,7 +1094,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.net_premium}
                 onChange={(e) => setFormData({ ...formData, net_premium: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1078,7 +1106,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.stamp_duty}
                 onChange={(e) => setFormData({ ...formData, stamp_duty: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1090,7 +1118,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.admin_fees}
                 onChange={(e) => setFormData({ ...formData, admin_fees: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1102,7 +1130,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.road_safety_fee}
                 onChange={(e) => setFormData({ ...formData, road_safety_fee: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1114,7 +1142,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.policy_fee}
                 onChange={(e) => setFormData({ ...formData, policy_fee: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1126,7 +1154,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.vat_fee}
                 onChange={(e) => setFormData({ ...formData, vat_fee: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1138,7 +1166,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.total_invoice}
                 onChange={(e) => setFormData({ ...formData, total_invoice: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1153,7 +1181,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.debit_note}
                 onChange={(e) => setFormData({ ...formData, debit_note: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1165,7 +1193,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="text"
                 value={formData.payment_receipt}
                 onChange={(e) => setFormData({ ...formData, payment_receipt: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1179,7 +1207,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
               <select
                 value={formData.commission_type}
                 onChange={(e) => setFormData({ ...formData, commission_type: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Commission Type</option>
                 <option value="Percentage">Percentage</option>
@@ -1195,7 +1223,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.commission_basic}
                 onChange={(e) => setFormData({ ...formData, commission_basic: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1207,7 +1235,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.commission_srcc}
                 onChange={(e) => setFormData({ ...formData, commission_srcc: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -1219,7 +1247,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
                 type="number"
                 value={formData.commission_tc}
                 onChange={(e) => setFormData({ ...formData, commission_tc: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1228,9 +1256,9 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             {isSubmitting && (
               <div className="flex-1 flex items-center">
                 <div className="h-1 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-600 animate-pulse rounded-full" style={{ width: '100%' }}></div>
+                  <div className="h-full bg-blue-600 animate-pulse rounded-full" style={{ width: '100%' }}></div>
                 </div>
-                <span className="ml-3 text-sm text-orange-600 whitespace-nowrap">Processing...</span>
+                <span className="ml-3 text-sm text-blue-600 whitespace-nowrap">Processing...</span>
               </div>
             )}
             <button
@@ -1244,7 +1272,7 @@ export default function ClientModal({ isOpen, onClose, client, onClientSaved }: 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800 flex items-center justify-center min-w-[120px]"
+              className="px-6 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 flex items-center justify-center min-w-[120px]"
             >
               {isSubmitting ? (
                 <>

@@ -347,11 +347,11 @@ export default function SalesDashboard() {
               <p className="text-gray-600 mt-1">Welcome back, {user?.firstName || 'Sales Agent'}!</p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="inline-block px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
+              <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                 Sales
               </span>
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <span className="text-orange-700 font-semibold">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-700 font-semibold">
                   {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0) || 'S'}
                 </span>
               </div>
@@ -376,7 +376,7 @@ export default function SalesDashboard() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <Search 
                 className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 cursor-pointer" 
@@ -387,7 +387,7 @@ export default function SalesDashboard() {
             <div className="flex items-center gap-3 flex-wrap">
               <Link
                 href="/sales-dashboard/add-client"
-                className="flex items-center gap-1 px-4 py-2 bg-orange-700 text-white rounded-lg hover:bg-orange-800"
+                className="flex items-center gap-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
               >
                 <Plus className="w-4 h-4" />
                 Add Client

@@ -18,8 +18,8 @@ const ptSerif = PT_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Ceilao Insurance Brokerage",
-  description: "Modern insurance brokerage management system by Ceilao Insurance",
+  title: "InsureMe Insurance Brokerage",
+  description: "Modern insurance brokerage management system by InsureMe Insurance",
 };
 
 export default function RootLayout({

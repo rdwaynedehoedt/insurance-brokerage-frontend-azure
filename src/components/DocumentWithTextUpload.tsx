@@ -48,7 +48,7 @@ const DocumentWithTextUpload = ({
           value={existingText || ''}
           onChange={(e) => onTextChange(e.target.value)}
           disabled={readOnly}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[80px]"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
           placeholder={`Enter ${label} details here...`}
         />
       </div>

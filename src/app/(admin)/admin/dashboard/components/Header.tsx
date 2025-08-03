@@ -23,13 +23,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </button>
           <div className="flex items-center space-x-2 ml-2">
             <Image 
-              src="/images/CIB-Logo.png" 
-              alt="Ceilao Insurance Brokerage" 
+              src="/images/insureme-logo-pwsimg-849.jpg" 
+              alt="InsureMe Insurance Brokerage" 
               width={40} 
               height={40} 
               className="h-8 w-auto"
             />
-            <span className="text-xl font-bold text-gray-800">Admin Panel</span>
+            <span className="text-xl font-bold text-gray-800">InsureMe Admin</span>
           </div>
         </div>
       </div>

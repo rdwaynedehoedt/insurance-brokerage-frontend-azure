@@ -32,8 +32,8 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
           >
             <div className="flex items-start">
               <div className="flex-shrink-0 mt-0.5">
-                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-orange-600" />
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
               <div className="ml-3 flex-1">
@@ -42,7 +42,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                   <p className="text-xs text-gray-500">{activity.timestamp}</p>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">{activity.details}</p>
-                <p className="text-xs font-medium text-orange-600 mt-2">By {activity.user}</p>
+                <p className="text-xs font-medium text-blue-600 mt-2">By {activity.user}</p>
               </div>
             </div>
           </motion.div>
@@ -50,7 +50,7 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
       </div>
       {activities.length > 0 && (
         <div className="p-4 border-t border-gray-100">
-          <a href="#" className="text-xs text-orange-600 hover:text-orange-800 font-medium">
+          <a href="#" className="text-xs text-blue-600 hover:text-blue-800 font-medium">
             View all activities
           </a>
         </div>

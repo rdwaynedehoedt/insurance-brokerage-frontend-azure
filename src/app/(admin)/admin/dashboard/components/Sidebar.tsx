@@ -35,7 +35,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, isOpen }: S
                 onClick={() => setActiveTab(item.id)}
                 className={`flex items-center px-4 py-3 rounded-lg w-full transition duration-200 ${
                   activeTab === item.id 
-                    ? 'bg-orange-50 text-orange-700 font-medium' 
+                    ? 'bg-blue-50 text-blue-700 font-medium' 
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >

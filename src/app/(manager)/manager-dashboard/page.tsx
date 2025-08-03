@@ -154,8 +154,8 @@ function ClientDetailsModal({ isOpen, onClose, client }: { isOpen: boolean; onCl
               <p className="text-sm font-medium">{client.branch || '-'}</p>
               
               {/* New text-only fields */}
-              <p className="text-sm text-gray-600">Ceilao IB File No:</p>
-              <p className="text-sm font-medium">{client.ceilao_ib_file_no || '-'}</p>
+                              <p className="text-sm text-gray-600">InsureMe IB File No:</p>
+                <p className="text-sm font-medium">{client.ceilao_ib_file_no || '-'}</p>
               
               <p className="text-sm text-gray-600">Main Class:</p>
               <p className="text-sm font-medium">{client.main_class || '-'}</p>
@@ -702,14 +702,14 @@ export default function ManagerDashboard() {
         <div className="p-6">
           <div className="flex flex-col items-center mb-4">
             <Image 
-              src="/images/CIB-Logo.png" 
-              alt="Ceilao Insurance Brokerage" 
+              src="/images/insureme-logo-pwsimg-849.jpg" 
+              alt="InsureMe Insurance Brokerage" 
               width={120} 
               height={60} 
               priority
               className="mb-2"
             />
-            <h1 className="text-xl font-bold text-orange-700">Ceilao Insurance</h1>
+            <h1 className="text-xl font-bold text-blue-700">InsureMe Insurance</h1>
             <p className="text-sm text-gray-600">{userRole === 'employee' ? 'Employee Portal' : 'Underwriters Portal'}</p>
           </div>
         </div>
@@ -723,7 +723,7 @@ export default function ManagerDashboard() {
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center px-6 py-3 text-sm font-medium ${
                   activeTab === item.id
-                    ? 'bg-orange-50 text-orange-700 border-r-4 border-orange-700'
+                    ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -758,11 +758,11 @@ export default function ManagerDashboard() {
               <p className="text-gray-600 mt-1">Welcome back, {userRole === 'employee' ? 'Employee' : 'Manager'}!</p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="inline-block px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">
+              <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                 {userRole === 'employee' ? 'Employee' : 'Manager'}
               </span>
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-orange-700" />
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-700" />
               </div>
             </div>
           </div>
@@ -775,15 +775,15 @@ export default function ManagerDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center">
-                    <div className="p-3 bg-orange-50 rounded-lg mr-4">
-                      <Users className="w-6 h-6 text-orange-700" />
+                    <div className="p-3 bg-blue-50 rounded-lg mr-4">
+                      <Users className="w-6 h-6 text-blue-700" />
                     </div>
                     <div>
                       <span className="text-sm text-gray-600">Total Clients</span>
                       <div className="text-2xl font-bold text-gray-900">
                         {isLoading ? (
                           <div className="flex items-center">
-                            <div className="h-5 w-5 border-2 border-orange-200 border-t-orange-600 rounded-full animate-spin mr-2"></div>
+                            <div className="h-5 w-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
                             <span className="text-gray-500 text-lg">Loading...</span>
                           </div>
                         ) : (
@@ -808,7 +808,7 @@ export default function ManagerDashboard() {
                   placeholder={userRole === 'employee' ? "Search clients..." : "Search Client..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               </div>
@@ -853,7 +853,7 @@ export default function ManagerDashboard() {
                       <div className="relative">
                         <button
                           onClick={() => document.getElementById('csvImport')?.click()}
-                          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md flex items-center"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
                         >
                           <Upload className="w-5 h-5 mr-2" />
                           Import CSV
@@ -1005,7 +1005,7 @@ export default function ManagerDashboard() {
                             id="itemsPerPage"
                             value={itemsPerPage}
                             onChange={handleItemsPerPageChange}
-                            className="text-sm border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                            className="text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                           >
                             <option value="10">10</option>
                             <option value="25">25</option>
@@ -1053,7 +1053,7 @@ export default function ManagerDashboard() {
                                   onClick={() => handlePageChange(pageNum)}
                                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                     currentPage === pageNum
-                                      ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                                       : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                                   }`}
                                 >

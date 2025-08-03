@@ -167,7 +167,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
               name="first_name"
               value={formData.first_name}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent ${
                 errors.first_name ? 'border-red-300' : 'border-gray-200'
               }`}
               placeholder="Enter first name"
@@ -187,7 +187,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
               name="last_name"
               value={formData.last_name}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent ${
                 errors.last_name ? 'border-red-300' : 'border-gray-200'
               }`}
               placeholder="Enter last name"
@@ -207,7 +207,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent ${
                 errors.email ? 'border-red-300' : 'border-gray-200'
               }`}
               placeholder="Enter email address"
@@ -227,7 +227,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
               name="phone_number"
               value={formData.phone_number}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent ${
                 errors.phone_number ? 'border-red-300' : 'border-gray-200'
               }`}
               placeholder="Enter phone number"
@@ -246,7 +246,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent ${
                 errors.role ? 'border-red-300' : 'border-gray-200'
               }`}
             >
@@ -271,7 +271,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-700 focus:border-transparent pr-10 ${
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent pr-10 ${
                   errors.password ? 'border-red-300' : 'border-gray-200'
                 }`}
                 placeholder={isEdit ? "Leave blank to keep current" : "Enter password"}
@@ -307,7 +307,7 @@ export default function UserForm({ onSubmit, onCancel, initialData, isEdit = fal
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2.5 bg-orange-700 text-white rounded-lg hover:bg-orange-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update User' : 'Create User')}
           </button>

@@ -58,7 +58,7 @@ export default function UserTable({ users, onAddUser, onEditUser, onDeleteUser }
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="h-9 w-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-800 font-semibold text-sm uppercase">
+                    <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold text-sm uppercase">
                       {user.first_name.charAt(0)}{user.last_name.charAt(0)}
                     </div>
                     <div className="ml-3">
